@@ -1,10 +1,16 @@
+aiohappyeyeballs==2.6.1
+aiohttp==3.13.3
+aiosignal==1.4.0
 annotated-types==0.7.0
 anyio==4.12.1
+attrs==25.4.0
 beautifulsoup4==4.14.3
 certifi==2026.1.4
 charset-normalizer==3.4.4
 distro==1.9.0
 dnspython==2.8.0
+firecrawl-py==4.12.0
+frozenlist==1.8.0
 google-api-core==2.28.1
 google-api-python-client==2.187.0
 google-auth==2.47.0
@@ -18,11 +24,14 @@ idna==3.11
 isodate==0.7.2
 jiter==0.12.0
 lxml==6.0.2
+multidict==6.7.0
+nest-asyncio==1.6.0
 numpy==2.4.0
 openai==2.14.0
 pandas==2.3.3
 praw==7.8.1
 prawcore==2.4.0
+propcache==0.4.1
 proto-plus==1.27.0
 protobuf==6.33.2
 pyasn1==0.6.1
@@ -32,6 +41,7 @@ pydantic_core==2.41.5
 pymongo==4.16.0
 pyparsing==3.3.1
 python-dateutil==2.9.0.post0
+python-dotenv==1.2.1
 pytrends==4.9.2
 pytz==2025.2
 requests==2.32.5
@@ -47,4 +57,6 @@ update-checker==0.18.0
 uritemplate==4.2.0
 urllib3==2.6.3
 websocket-client==1.9.0
+websockets==15.0.1
 Wikipedia-API==0.8.1
+yarl==1.22.0
