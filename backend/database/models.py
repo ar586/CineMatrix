@@ -216,3 +216,47 @@ class TwitterNarrative(BaseModel):
         populate_by_name = True
         arbitrary_types_allowed = True
         json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+class RelatedEvent(BaseModel):
+    event_type: str
+    event_date: Optional[str] = None # Keeping as string as per example "2026-01-06", or could parse to date
+
+class Evidence(BaseModel):
+    sentiment_change: Optional[float] = None
+    interest_change: Optional[float] = None
+    time_window: Optional[str] = None
+    related_events: List[RelatedEvent] = Field(default_factory=list)
+
+class RecommendedVisual(BaseModel):
+    component: str
+    x: str
+    y: List[str] = Field(default_factory=list)
+
+class GeneratorInfo(BaseModel):
+    agent: str
+    version: str
+
+class Insight(BaseModel):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    movie_id: str = Field(..., description="Link to Movie collection")
+    
+    insight_type: str
+    severity: str = "medium"
+    
+    title: str
+    summary: str
+    
+    evidence: Optional[Evidence] = None
+    
+    recommended_visual: Optional[RecommendedVisual] = None
+    
+    confidence: float
+    
+    generated_by: Optional[GeneratorInfo] = None
+    
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {datetime: lambda dt: dt.isoformat()}

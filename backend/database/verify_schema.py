@@ -229,3 +229,42 @@ try:
     print(f"Source Generator: {narrative.source.generator}")
 except Exception as e:
     print(f"Twitter Narrative Validation Error: {e}")
+
+from backend.database.models import Insight
+
+insight_data = {
+  "movie_id": "tt1375666",
+  "insight_type": "sentiment_divergence",
+  "severity": "high",
+  "title": "High interest despite negative sentiment",
+  "summary": "Search interest remains elevated even as...",
+  "evidence": {
+    "sentiment_change": -0.34,
+    "interest_change": 0.41,
+    "time_window": "48h",
+    "related_events": [
+      { "event_type": "controversy", "event_date": "2026-01-06" }
+    ]
+  },
+  "recommended_visual": {
+    "component": "DualLineChart",
+    "x": "date",
+    "y": ["sentiment", "interest"]
+  },
+  "confidence": 0.88,
+  "generated_by": {
+    "agent": "insight_orchestrator",
+    "version": "v1.0"
+  },
+  "generated_at": datetime.now()
+}
+
+try:
+    print("\n--- Verifying Insight Model ---")
+    insight = Insight(**insight_data)
+    print("Successfully validated Insight model!")
+    print(f"Insight Title: {insight.title}")
+    print(f"Severity: {insight.severity}")
+    print(f"Visual Component: {insight.recommended_visual.component}")
+except Exception as e:
+    print(f"Insight Validation Error: {e}")
