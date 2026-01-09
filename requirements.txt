@@ -4,6 +4,7 @@ beautifulsoup4==4.14.3
 certifi==2026.1.4
 charset-normalizer==3.4.4
 distro==1.9.0
+dnspython==2.8.0
 google-api-core==2.28.1
 google-api-python-client==2.187.0
 google-auth==2.47.0
@@ -28,6 +29,7 @@ pyasn1==0.6.1
 pyasn1_modules==0.4.2
 pydantic==2.12.5
 pydantic_core==2.41.5
+pymongo==4.16.0
 pyparsing==3.3.1
 python-dateutil==2.9.0.post0
 pytrends==4.9.2
