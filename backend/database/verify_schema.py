@@ -268,3 +268,82 @@ try:
     print(f"Visual Component: {insight.recommended_visual.component}")
 except Exception as e:
     print(f"Insight Validation Error: {e}")
+
+from backend.database.models import SentimentAnalysis
+
+sentiment_data = {
+  "movie_id": "tt1375666",
+  "source": "reddit",
+  "source_ref": {
+    "post_id": "abc123"
+  },
+  "sentiment": {
+    "label": "negative",
+    "score": -0.43,
+    "confidence": 0.89
+  },
+  "aspects": {
+    "acting": 0.71,
+    "story": -0.52,
+    "ending": -0.81,
+    "music": 0.65
+  },
+  "engagement_weight": {
+    "upvotes": 1240,
+    "comment_count": 542
+  },
+  "model": {
+    "name": "movie-sentiment-v1",
+    "version": "1.0",
+    "aggregation": "post_with_top_comments"
+  },
+  "time_window": {
+    "from": datetime(2026, 1, 7),
+    "to": datetime(2026, 1, 8)
+  },
+  "processed_at": datetime.now()
+}
+
+try:
+    print("\n--- Verifying Sentiment Analysis Model ---")
+    sa = SentimentAnalysis(**sentiment_data)
+    print("Successfully validated SentimentAnalysis model!")
+    print(f"Sentiment Label: {sa.sentiment.label}")
+    print(f"Aspect (Ending): {sa.aspects.ending}")
+    print(f"Source ID: {sa.source_ref.post_id}")
+except Exception as e:
+    print(f"Sentiment Analysis Validation Error: {e}")
+
+from backend.database.models import DailyMovieSentiment
+
+daily_data = {
+  "movie_id": "tt1375666",
+  "date": "2026-01-08",
+  "overall_sentiment": -0.27,
+  "confidence": 0.91,
+  "source_breakdown": {
+    "reddit": -0.34,
+    "youtube": -0.18
+  },
+  "aspect_summary": {
+    "acting": 0.65,
+    "story": -0.42,
+    "ending": -0.71,
+    "music": 0.74
+  },
+  "volume": {
+    "reddit_posts": 12,
+    "youtube_videos": 5
+  },
+  "volatility": 0.38
+}
+
+try:
+    print("\n--- Verifying Daily Movie Sentiment Model ---")
+    daily = DailyMovieSentiment(**daily_data)
+    print("Successfully validated DailyMovieSentiment model!")
+    print(f"Overall Sentiment: {daily.overall_sentiment}")
+    print(f"Reddit Volume: {daily.volume.reddit_posts}")
+    print(f"Acting Aspect: {daily.aspect_summary.acting}")
+except Exception as e:
+    print(f"Daily Sentiment Validation Error: {e}")

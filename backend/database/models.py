@@ -260,3 +260,90 @@ class Insight(BaseModel):
         populate_by_name = True
         arbitrary_types_allowed = True
         json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+class SourceRef(BaseModel):
+    post_id: Optional[str] = None
+    video_id: Optional[str] = None
+
+class SentimentScore(BaseModel):
+    label: str # positive | neutral | negative
+    score: float # range [-1, +1]
+    confidence: float
+
+class Aspects(BaseModel):
+    acting: Optional[float] = None
+    story: Optional[float] = None
+    ending: Optional[float] = None
+    music: Optional[float] = None
+    # Allow extra fields for dynamic aspects
+    model_config = {"extra": "allow"}
+
+class EngagementWeight(BaseModel):
+    upvotes: Optional[int] = None
+    comment_count: Optional[int] = None
+    likes: Optional[int] = None
+    views: Optional[int] = None
+
+class ModelInfo(BaseModel):
+    name: str
+    version: str
+    aggregation: str
+
+class SentimentAnalysis(BaseModel):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    movie_id: str = Field(..., description="Link to Movie collection")
+    
+    source: str # reddit | youtube
+    source_ref: Optional[SourceRef] = None
+    
+    sentiment: SentimentScore
+    aspects: Optional[Aspects] = None
+    
+    engagement_weight: Optional[EngagementWeight] = None
+    
+    model: Optional[ModelInfo] = None
+    
+    time_window: Optional[TimeWindow] = None
+    
+    processed_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+class SourceBreakdown(BaseModel):
+    reddit: Optional[float] = None
+    youtube: Optional[float] = None
+    # Allow extra fields for new sources
+    model_config = {"extra": "allow"}
+
+class Volume(BaseModel):
+    reddit_posts: Optional[int] = 0
+    youtube_videos: Optional[int] = 0
+    # Allow extra fields
+    model_config = {"extra": "allow"}
+
+class DailyMovieSentiment(BaseModel):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    movie_id: str = Field(..., description="Link to Movie collection")
+    
+    date: str # keeping as string "YYYY-MM-DD" as per example, could be date object
+    
+    overall_sentiment: float
+    confidence: float
+    
+    source_breakdown: Optional[SourceBreakdown] = None
+    
+    aspect_summary: Optional[Aspects] = None # Reusing Aspects model from SentimentAnalysis
+    
+    volume: Optional[Volume] = None
+    
+    volatility: Optional[float] = None
+    
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
