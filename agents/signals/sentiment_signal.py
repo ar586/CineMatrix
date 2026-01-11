@@ -1,43 +1,39 @@
 
+from backend.ml.sentiment_model import RobertaSentiment
+from backend.ml.aspect_model import DebertaAspect
+
 class SentimentSignal:
     def __init__(self):
-        pass
+        # Initializing models here might be slow on each instantiation.
+        # Ideally, use a Singleton or pass them in dependency injection.
+        # For now, we load them lazily or here.
+        self.sentiment_model = RobertaSentiment()
+        self.aspect_model = DebertaAspect()
 
     def analyze(self, text: str, source: str, source_ref: dict) -> dict:
         """
         Analyze sentiment from text data.
         Returns a dict matching the SentimentAnalysis schema input.
         """
-        # Basic heuristic for MVP (since no heavy NLP lib is installed)
-        # In production, swap this with VADER or an LLM call.
+        # Run Roberta Model
+        label, score, confidence = self.sentiment_model.predict(text)
         
-        words = text.lower().split()
-        positive_words = {"good", "great", "amazing", "awesome", "love", "excellent", "best", "masterpiece"}
-        negative_words = {"bad", "terrible", "worst", "hate", "boring", "awful", "trash", "disappointing"}
+        # Run Aspect Extraction (Zero-Shot)
+        aspect_scores = self.aspect_model.extract_aspects(text)
         
-        score = 0
-        for word in words:
-            if word in positive_words:
-                score += 0.1
-            elif word in negative_words:
-                score -= 0.1
-        
-        # Clamp score between -1 and 1
-        score = max(-1.0, min(1.0, score))
-        
-        label = "neutral"
-        if score > 0.05:
-            label = "positive"
-        elif score < -0.05:
-            label = "negative"
+        # Refine aspect scores based on overall sentiment
+        # Currently DebertaAspect returns "relevance". 
+        # We multiply by the overall polarity score to estimate "aspect sentiment".
+        # e.g., if Overall Score = -0.8 and Acting Relevance = 0.9 -> Acting = -0.72
+        refined_aspects = {}
+        for aspect, relevance in aspect_scores.items():
+            refined_aspects[aspect] = round(relevance * score, 2)
             
         return {
             "sentiment": {
                 "label": label,
                 "score": round(score, 2),
-                "confidence": 0.8  # Placeholder confidence
+                "confidence": round(confidence, 2)
             },
-            "aspects": {
-                "general": round(score, 2)
-            }
+            "aspects": refined_aspects
         }

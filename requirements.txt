@@ -60,3 +60,6 @@ websocket-client==1.9.0
 websockets==15.0.1
 Wikipedia-API==0.8.1
 yarl==1.22.0
+transformers
+torch
+scipy
