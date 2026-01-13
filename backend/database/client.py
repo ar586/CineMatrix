@@ -2,6 +2,8 @@
 from pymongo import MongoClient
 import os
 
+import certifi
+
 class MongoDBClient:
     def __init__(self):
         """
@@ -22,7 +24,7 @@ class MongoDBClient:
         self.uri = os.getenv("MONGO_URI", default_uri)
         
         try:
-            self.client = MongoClient(self.uri)
+            self.client = MongoClient(self.uri, tlsCAFile=certifi.where())
             # Send a ping to confirm a successful connection
             self.client.admin.command('ping')
             print("Successfully connected to MongoDB Atlas!")

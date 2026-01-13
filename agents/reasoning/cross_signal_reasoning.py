@@ -1,57 +1,73 @@
 
+import json
 from typing import List
+import logging
 from agents.signals.schema import Signal
 from agents.reasoning.schema import Hypothesis
+from backend.llm.client import LLMService
+
+logger = logging.getLogger(__name__)
 
 class CrossSignalReasoning:
+    def __init__(self):
+        self.llm = LLMService()
+
     def synthesize(self, signals: List[Signal]) -> List[Hypothesis]:
         """
-        Combines signals to form hypotheses.
+        Combines signals to form hypotheses using LLM.
         """
-        hypotheses = []
-        
-        # Group signals by date proximity? Or just analyze the set?
-        # For MVP, look for co-occurrence in the passed list (assuming generic time window passed)
-        
-        signal_types = [s.signal_type for s in signals]
-        
-        # Pattern 1: Controversy (Hype + Drop + [Polarization])
-        if "sudden_hype" in signal_types and "sentiment_drop" in signal_types:
-            # Find the specific signals
-            hype = next(s for s in signals if s.signal_type == "sudden_hype")
-            drop = next(s for s in signals if s.signal_type == "sentiment_drop")
-            
-            hypotheses.append(Hypothesis(
-                summary="Potential Controversy or Scandal",
-                confidence=0.8,
-                trigger_signals=["sudden_hype", "sentiment_drop"],
-                reasoning=f"Volume spiked ({hype.description}) while sentiment crashed ({drop.description}). This usually indicates a controversial event.",
-                supporting_evidence=[
-                   {"signal": hype.model_dump()},
-                   {"signal": drop.model_dump()}
-                ]
-            ))
+        if not signals:
+            return []
 
-        # Pattern 2: Viral Hit (Hype + Positive/High Sentiment)
-        # We don't have a "Positive Sentiment" signal from SignalAgents yet, 
-        # but we can infer if Hype exists and NO sentiment drop exists, 
-        # OR we check the metadata of the Hype signal if it carries sentiment info?
-        # The Signal agent logic for Hype didn't capture sentiment.
-        # Ideally, we'd look at the raw data or have a "Positive Surge" signal.
-        # For now, let's skip or assume logic: Hype + No Drop = Likely Good? 
-        # Risky. Let's stick to explicit signals.
+        # 1. Prepare Signal Context
+        signals_json = [s.model_dump() for s in signals]
+        signal_descriptions = "\n".join([f"- [{s.signal_type}] {s.description} (Source: {s.metadata.get('source', 'unknown')})" for s in signals])
+
+        # 2. Construct Prompt
+        prompt = f"""
+        You are an advanced Market Intelligence AI for the movie industry.
+        Analyze the following 'Signals' detected from social media and data sources:
         
-        # Pattern 3: Divisive Reception (Polarization + Mismatch/Drop)
-        if "aspect_polarization" in signal_types:
-            polar = next(s for s in signals if s.signal_type == "aspect_polarization")
-            hypotheses.append(Hypothesis(
-                summary="Divisive Audience Reception",
-                confidence=0.7,
-                trigger_signals=["aspect_polarization"],
-                reasoning=f"Audience is split on specific aspects: {polar.description}",
-                supporting_evidence=[
-                    {"signal": polar.model_dump()}
-                ]
-            ))
-            
+        {signal_descriptions}
+        
+        Detailed Data:
+        {json.dumps(signals_json, default=str)}
+        
+        Task:
+        Identify correlations, anomalies, or emerging narratives.
+        Formulate specific hypotheses about the audience reception or market trend.
+        
+        Output a JSON array of objects with these keys:
+        - "summary": Short title of the insight.
+        - "confidence": Float between 0.0 and 1.0.
+        - "trigger_signals": List of signal_type strings involved.
+        - "reasoning": Detailed explanation of the correlation.
+        """
+        
+        # 3. Call LLM
+        response = self.llm.generate_json(prompt)
+        
+        # 4. Parse Response
+        hypotheses = []
+        if isinstance(response, list):
+            for item in response:
+                try:
+                    # Map back to original signal objects for evidence
+                    triggered_types = item.get("trigger_signals", [])
+                    evidence = []
+                    for sig in signals:
+                         if sig.signal_type in triggered_types:
+                             evidence.append({"signal": sig.model_dump()})
+                    
+                    hypotheses.append(Hypothesis(
+                        summary=item.get("summary", "Unknown Insight"),
+                        confidence=item.get("confidence", 0.5),
+                        trigger_signals=triggered_types,
+                        reasoning=item.get("reasoning", ""),
+                        supporting_evidence=evidence
+                    ))
+                except Exception as e:
+                    logger.error(f"Failed to parse hypothesis item: {e}")
+        
         return hypotheses
+

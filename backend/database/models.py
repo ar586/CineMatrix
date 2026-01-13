@@ -58,6 +58,8 @@ class Movie(BaseModel):
     
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    is_active: bool = Field(default=True, description="Whether the movie is active for daily processing")
 
     class Config:
         populate_by_name = True
