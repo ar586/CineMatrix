@@ -53,6 +53,7 @@ class AgentOrchestrator:
                 # Format for DB (Schema: SentimentAnalysis)
                 sentiment_doc = {
                     "movie_id": movie_id,
+                    "text": disc["text"],  # Store original text
                     "sentiment": {
                         "label": res.label,
                         "score": res.score,
@@ -126,6 +127,35 @@ class AgentOrchestrator:
                         })
         except Exception as e:
              logger.warning(f"YouTube Fetch Error: {e}")
+        
+        # Wikipedia
+        try:
+            # Fetch Wikipedia summary for the movie
+            wiki_data = self.imdb.fetch_wikipedia_data(keyword)
+            if wiki_data:
+                items.append({
+                    "text": wiki_data.get("summary", ""),
+                    "source": "wikipedia",
+                    "source_ref": {"url": wiki_data.get("url", "")},
+                    "engagement": {}
+                })
+        except Exception as e:
+            logger.warning(f"Wikipedia Fetch Error: {e}")
+        
+        # IMDB
+        try:
+            # Fetch IMDB data (reviews, ratings, etc.)
+            imdb_data = self.imdb.fetch_movie_data(keyword)
+            if imdb_data and imdb_data.get("reviews"):
+                for review in imdb_data.get("reviews", [])[:5]:  # Limit to 5 reviews
+                    items.append({
+                        "text": review.get("text", ""),
+                        "source": "imdb",
+                        "source_ref": {"review_id": review.get("id", "")},
+                        "engagement": {"rating": review.get("rating", 0)}
+                    })
+        except Exception as e:
+            logger.warning(f"IMDB Fetch Error: {e}")
              
         return items
 

@@ -64,3 +64,5 @@ transformers
 torch
 scipy
 google-generativeai
+fastapi
+uvicorn
