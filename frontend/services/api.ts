@@ -6,6 +6,21 @@ export interface Movie {
     _id: string;
     movie_id: string;
     title: string;
+    genres?: string[];
+    cast?: string[];
+    crew?: {
+        director?: string;
+        writers?: string[];
+    };
+    imdb?: {
+        rating?: number;
+    };
+    rotten_tomatoes?: {
+        critics_score?: number;
+    };
+    metascore?: number;
+    box_office?: string;
+    awards?: string;
     daily_sentiment_summary: {
         score: number;
         volume: number;
@@ -50,6 +65,18 @@ export interface FeedItem {
     created_at: string;
 }
 
+export interface NewsArticle {
+    _id: string;
+    title: string;
+    url: string;
+    source: string;
+    published_date: string;
+    insights: string[];
+    category: string;
+    sentiment: string;
+    relevance_score: number;
+}
+
 export const api = {
     getMovies: async () => {
         const response = await axios.get<Movie[]>(`${API_BASE}/movies`);
@@ -59,12 +86,20 @@ export const api = {
         const response = await axios.get<DailySentiment[]>(`${API_BASE}/movies/${movieId}/daily`);
         return response.data;
     },
+    getMovie: async (movieId: string) => {
+        const response = await axios.get<Movie>(`${API_BASE}/movies/${movieId}`);
+        return response.data;
+    },
     getInsights: async (movieId: string) => {
         const response = await axios.get<Insight[]>(`${API_BASE}/movies/${movieId}/insights`);
         return response.data;
     },
     getFeed: async (movieId: string) => {
         const response = await axios.get<FeedItem[]>(`${API_BASE}/movies/${movieId}/feed`);
+        return response.data;
+    },
+    getNews: async (movieId: string) => {
+        const response = await axios.get<NewsArticle[]>(`${API_BASE}/movies/${movieId}/news`);
         return response.data;
     }
 };

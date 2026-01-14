@@ -1,34 +1,94 @@
-
-from firecrawl import FirecrawlApp
 import os
+from firecrawl import FirecrawlApp
+from langchain_google_genai import ChatGoogleGenerativeAI
+import logging
+
+logger = logging.getLogger(__name__)
 
 class FirecrawlClient:
+    """Client for Firecrawl web scraping"""
+    
     def __init__(self):
-        """
-        Initialize Firecrawl Client.
-        Expects 'FIRECRAWL_API_KEY' in environment variables.
-        """
         self.api_key = os.getenv("FIRECRAWL_API_KEY")
-        if self.api_key:
-            self.app = FirecrawlApp(api_key=self.api_key)
-        else:
-            self.app = None
-
-    def search(self, query, **kwargs):
+        if not self.api_key:
+            raise ValueError("FIRECRAWL_API_KEY not found in environment variables")
+        self.client = FirecrawlApp(api_key=self.api_key)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash-exp", temperature=0.3)
+    
+    def generate_search_queries(self, movie_title: str, cast: list = None) -> list[str]:
         """
-        Search the web using Firecrawl.
-        Pass kwargs directly to the underlying SDK.
+        Generate diverse search queries for a movie using LLM.
+        Includes: news, box office, controversies, cast news, awards, production updates
         """
-        if not self.app:
-            raise ValueError("FIRECRAWL_API_KEY not found.")
+        cast_str = ", ".join(cast[:3]) if cast else "the cast"
         
-        return self.app.search(query, **kwargs)
+        prompt = f"""Generate 5 diverse Google search queries to find recent news articles about the movie "{movie_title}".
+        
+Include queries covering:
+1. General news and updates
+2. Box office performance
+3. Controversies or scandals (related to the movie or cast: {cast_str})
+4. Awards and nominations
+5. Production updates or behind-the-scenes news
 
-    def scrape_url(self, url, params=None):
-        """
-        Scrape a specific URL.
-        """
-        if not self.app:
-            raise ValueError("FIRECRAWL_API_KEY not found.")
+Return ONLY the search queries, one per line, without numbering or explanations."""
 
-        return self.app.scrape_url(url, params=params)
+        try:
+            response = self.llm.invoke(prompt)
+            queries = [q.strip() for q in response.content.strip().split('\n') if q.strip()]
+            logger.info(f"Generated {len(queries)} search queries for {movie_title}")
+            return queries[:5]  # Limit to 5
+        except Exception as e:
+            logger.error(f"Failed to generate queries with LLM: {e}")
+            # Fallback queries
+            return [
+                f'"{movie_title}" news',
+                f'"{movie_title}" box office',
+                f'"{movie_title}" controversy',
+                f'"{movie_title}" {cast_str} news',
+                f'"{movie_title}" awards'
+            ]
+    
+    def search_and_scrape(self, query: str, limit: int = 2) -> list[dict]:
+        """
+        Search Google and scrape top results using Firecrawl.
+        Returns list of scraped pages with title, url, and markdown content.
+        """
+        try:
+            # Use Firecrawl's search feature
+            search_results = self.client.search(query, limit=limit)
+            
+            scraped_pages = []
+            for result in search_results.get('data', []):
+                try:
+                    # Scrape each URL
+                    scrape_result = self.client.scrape_url(
+                        result['url'],
+                        params={'formats': ['markdown']}
+                    )
+                    
+                    if scrape_result and scrape_result.get('markdown'):
+                        scraped_pages.append({
+                            'title': result.get('title', 'Untitled'),
+                            'url': result['url'],
+                            'content': scrape_result['markdown'],
+                            'source': self._extract_domain(result['url'])
+                        })
+                except Exception as e:
+                    logger.warning(f"Failed to scrape {result.get('url')}: {e}")
+                    continue
+            
+            return scraped_pages
+        except Exception as e:
+            logger.error(f"Search and scrape failed for query '{query}': {e}")
+            return []
+    
+    def _extract_domain(self, url: str) -> str:
+        """Extract domain name from URL"""
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        domain = parsed.netloc
+        # Remove www. prefix
+        if domain.startswith('www.'):
+            domain = domain[4:]
+        return domain

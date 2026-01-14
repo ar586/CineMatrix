@@ -47,6 +47,15 @@ def get_movies(active_only: bool = True):
     # For now, just return all.
     return movies
 
+@app.get("/api/movies/{movie_id}", response_model=Movie)
+def get_movie(movie_id: str):
+    if db is None: raise HTTPException(500, "DB Connection Failed")
+    
+    movie = db.movies.find_one({"_id": movie_id})
+    if not movie:
+        raise HTTPException(404, "Movie not found")
+    return movie
+
 @app.get("/api/movies/{movie_id}/daily", response_model=List[DailyMovieSentiment])
 def get_daily_sentiment(movie_id: str):
     if db is None: raise HTTPException(500, "DB Connection Failed")
@@ -104,6 +113,32 @@ def get_feed(movie_id: str, limit: int = 50):
         })
         
     return feed_items
+
+@app.get("/api/movies/{movie_id}/news")
+def get_news(movie_id: str, limit: int = 10):
+    if db is None: raise HTTPException(500, "DB Connection Failed")
+    
+    # Fetch news articles sorted by relevance and date
+    cursor = db.news_articles.find({"movie_id": movie_id}).sort([
+        ("relevance_score", -1),
+        ("fetched_at", -1)
+    ]).limit(limit)
+    
+    articles = list(cursor)
+    
+    # Transform for frontend
+    return [{
+        "_id": str(article["_id"]),
+        "title": article.get("title", ""),
+        "url": article.get("url", ""),
+        "source": article.get("source", ""),
+        "published_date": article.get("fetched_at", datetime.now()).isoformat(),
+        "insights": article.get("insights", []),
+        "category": article.get("category", "general"),
+        "sentiment": article.get("sentiment", "neutral"),
+        "relevance_score": article.get("relevance_score", 0.5)
+    } for article in articles]
+
 
 if __name__ == "__main__":
     import uvicorn

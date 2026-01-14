@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel, Field, BeforeValidator
-from typing import Optional, List, Annotated
+from typing import Optional, List, Annotated, Union, Dict
 from datetime import datetime
 
 # Helper for MongoDB ObjectId
@@ -34,7 +34,8 @@ class WikipediaData(BaseModel):
 
 class Movie(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    movie_id: str = Field(..., description="IMDB ID usually, e.g., tt1375666")
+    movie_id: Optional[str] = Field(None, description="IMDB ID usually, e.g., tt1375666")
+    tmdb_id: Optional[int] = None
     title: str
     original_title: Optional[str] = None
     
@@ -56,10 +57,32 @@ class Movie(BaseModel):
     rotten_tomatoes: Optional[RottenTomatoesData] = None
     wikipedia: Optional[WikipediaData] = None
     
+    metascore: Optional[int] = None
+    box_office: Optional[str] = None
+    awards: Optional[str] = None
+    
+    # TMDB-specific fields
+    budget: Optional[int] = None
+    revenue: Optional[int] = None
+    backdrop_url: Optional[str] = None
+    tagline: Optional[str] = None
+    overview: Optional[str] = None
+    popularity: Optional[float] = None
+    vote_average: Optional[float] = None
+    vote_count: Optional[int] = None
+    production_companies: List[str] = Field(default_factory=list)
+    trailers: List[Dict] = Field(default_factory=list)
+    collection: Optional[Dict] = None
+    
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
     is_active: bool = Field(default=True, description="Whether the movie is active for daily processing")
+    
+    def model_post_init(self, __context):
+        # Sync movie_id with _id if movie_id is not set
+        if not self.movie_id and self.id:
+            self.movie_id = str(self.id)
 
     class Config:
         populate_by_name = True
@@ -330,16 +353,16 @@ class DailyMovieSentiment(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     movie_id: str = Field(..., description="Link to Movie collection")
     
-    date: str # keeping as string "YYYY-MM-DD" as per example, could be date object
+    date: Union[str, datetime] = Field(..., description="Date of sentiment")
     
     overall_sentiment: float
-    confidence: float
+    confidence: Optional[float] = 0.9
     
     source_breakdown: Optional[SourceBreakdown] = None
     
     aspect_summary: Optional[Aspects] = None # Reusing Aspects model from SentimentAnalysis
     
-    volume: Optional[Volume] = None
+    volume: Optional[Union[int, Volume]] = None
     
     volatility: Optional[float] = None
     

@@ -1,5 +1,5 @@
 import { api } from '@/services/api';
-import type { DailySentiment, Insight, FeedItem } from '@/services/api';
+import type { Movie, DailySentiment, Insight, FeedItem, NewsArticle } from '@/services/api';
 import { MovieDashboard } from '@/components/MovieDashboard';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -9,15 +9,19 @@ export const dynamic = 'force-dynamic';
 export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
+    let movie: Movie | null = null;
     let dailyData: DailySentiment[] = [];
     let insights: Insight[] = [];
     let feed: FeedItem[] = [];
+    let news: NewsArticle[] = [];
 
     try {
-        [dailyData, insights, feed] = await Promise.all([
+        [movie, dailyData, insights, feed, news] = await Promise.all([
+            api.getMovie(id).catch(() => null), // Handle 404 gracefully
             api.getDailySentiment(id),
             api.getInsights(id),
-            api.getFeed(id)
+            api.getFeed(id),
+            api.getNews(id)
         ]);
     } catch (error) {
         console.error('Failed to fetch movie details:', error);
@@ -38,8 +42,19 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
             {/* HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: '2rem' }}>
                 <div>
-                    <h1 style={{ fontSize: '3rem', margin: 0, fontWeight: 800 }}>{id}</h1>
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                    <h1 style={{ fontSize: '3rem', margin: 0, fontWeight: 800 }}>{movie?.title || id}</h1>
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        {movie?.genres?.map(g => (
+                            <span key={g} style={{ border: '1px solid #333', padding: '0.2rem 0.8rem', borderRadius: '15px', fontSize: '0.8rem', color: '#888' }}>
+                                {g}
+                            </span>
+                        ))}
+                        {movie?.imdb?.rating && (
+                            <span style={{ color: '#f5c518', fontWeight: 'bold', fontSize: '1rem' }}>
+                                ★ {movie.imdb.rating}
+                            </span>
+                        )}
+                        <span style={{ color: '#666', fontSize: '0.9rem' }}>|</span>
                         <span style={{ background: '#1c1c21', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', color: '#a1a1aa' }}>
                             Sentiment: <span style={{ color: (latestDay?.overall_sentiment || 0) > 0 ? '#00ff9d' : '#ff4757', fontWeight: 'bold' }}>
                                 {latestDay?.overall_sentiment || 0}
@@ -49,6 +64,13 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
                             Volume: {latestDay?.volume || 0}
                         </span>
                     </div>
+                    {/* Cast & Crew Info Line */}
+                    {(movie?.crew?.director || movie?.cast) && (
+                        <div style={{ marginTop: '1rem', color: '#888', fontSize: '0.9rem' }}>
+                            {movie?.crew?.director && <span style={{ marginRight: '1.5rem' }}>Director: <span style={{ color: '#ccc' }}>{movie.crew.director}</span></span>}
+                            {movie?.cast && <span>Cast: <span style={{ color: '#ccc' }}>{movie.cast.slice(0, 3).join(", ")}</span></span>}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -79,7 +101,9 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
                 dailyData={dailyData}
                 insights={insights}
                 feed={feed}
+                news={news}
                 currentAspects={currentAspects}
+                movie={movie}
             />
         </div>
     );
