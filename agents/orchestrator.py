@@ -11,7 +11,11 @@ from agents.nodes.reddit_node import reddit_agent_node
 from agents.nodes.youtube_node import youtube_agent_node
 from agents.nodes.wiki_node import wiki_agent_node
 from agents.nodes.imdb_node import imdb_agent_node
+from agents.nodes.tmdb_node import tmdb_agent_node
+from agents.nodes.firecrawl_node import firecrawl_agent_node
+from agents.nodes.news_insight_node import news_insight_node
 from agents.nodes.sentiment_node import SentimentNode
+from agents.nodes.visualization_node import visualization_agent_node
 
 # Basic Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -27,10 +31,16 @@ class AgentOrchestrator:
         self.workflow.add_node("youtube", youtube_agent_node)
         self.workflow.add_node("wiki", wiki_agent_node)
         self.workflow.add_node("imdb", imdb_agent_node)
+        self.workflow.add_node("tmdb", tmdb_agent_node)
+        self.workflow.add_node("firecrawl", firecrawl_agent_node)
+        self.workflow.add_node("news_insight", news_insight_node)
         
         # Initialize logic class for sentiment which needs __init__
         sentiment_processor = SentimentNode()
         self.workflow.add_node("sentiment", sentiment_processor)
+        
+        # Add visualization node
+        self.workflow.add_node("visualization", visualization_agent_node)
         
         # Define Edges (Parallel Fetching -> Sentiment Analysis)
         self.workflow.set_entry_point("reddit") # Start with one, but we want parallel. 
@@ -55,11 +65,16 @@ class AgentOrchestrator:
         # Let's run: Reddit -> YouTube -> Wiki -> IMDB -> Sentiment.
         # It's slower but simple.
         
+        # Sequential workflow: Reddit → YouTube → Wiki → IMDB → TMDB → Firecrawl → News Insight → Sentiment → Visualization → END
         self.workflow.add_edge("reddit", "youtube")
         self.workflow.add_edge("youtube", "wiki")
         self.workflow.add_edge("wiki", "imdb")
-        self.workflow.add_edge("imdb", "sentiment")
-        self.workflow.add_edge("sentiment", END)
+        self.workflow.add_edge("imdb", "tmdb")
+        self.workflow.add_edge("tmdb", "firecrawl")
+        self.workflow.add_edge("firecrawl", "news_insight")
+        self.workflow.add_edge("news_insight", "sentiment")
+        self.workflow.add_edge("sentiment", "visualization")
+        self.workflow.add_edge("visualization", END)
         
         self.app = self.workflow.compile()
 
@@ -73,7 +88,9 @@ class AgentOrchestrator:
             "movie_title": movie_title,
             "movie_id": movie_id,
             "signals": [],
-            "errors": []
+            "errors": [],
+            "cast": [],
+            "news_articles": []
         }
         
         try:

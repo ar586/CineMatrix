@@ -6,6 +6,22 @@ export interface Movie {
     _id: string;
     movie_id: string;
     title: string;
+    production_companies?: string[];
+    trailers?: Array<{
+        key: string;
+        name: string;
+        type: string;
+        url: string;
+    }>;
+    collection?: {
+        id: number;
+        name: string;
+        poster?: string;
+    };
+    backdrop_url?: string;
+    poster_url?: string;
+    tagline?: string;
+    overview?: string;
     genres?: string[];
     cast?: string[];
     crew?: {
@@ -77,6 +93,26 @@ export interface NewsArticle {
     relevance_score: number;
 }
 
+export interface RedditComment {
+    comment_id: string;
+    text: string;
+    score: number;
+    created_at: string;
+}
+
+export interface RedditPost {
+    _id: string;
+    post_id: string;
+    subreddit: string;
+    title: string;
+    selftext?: string;
+    url: string;
+    score: number;
+    num_comments: number;
+    created_at: string;
+    comments: RedditComment[];
+}
+
 export const api = {
     getMovies: async () => {
         const response = await axios.get<Movie[]>(`${API_BASE}/movies`);
@@ -100,6 +136,10 @@ export const api = {
     },
     getNews: async (movieId: string) => {
         const response = await axios.get<NewsArticle[]>(`${API_BASE}/movies/${movieId}/news`);
+        return response.data;
+    },
+    getRedditPosts: async (movieId: string) => {
+        const response = await axios.get<RedditPost[]>(`${API_BASE}/movies/${movieId}/reddit`);
         return response.data;
     }
 };

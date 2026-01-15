@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { DailySentiment, Insight, FeedItem, Movie, NewsArticle } from '@/services/api';
+import type { DailySentiment, Insight, FeedItem, Movie, NewsArticle, RedditPost } from '@/services/api';
 import { SentimentChart } from '@/components/SentimentChart';
 import { AspectRadar } from '@/components/AspectRadar';
 import { InsightCard } from '@/components/InsightCard';
+import { InfiniteVisualizationFeed } from '@/components/InfiniteVisualizationFeed';
+import { RedditDiscussions } from '@/components/RedditDiscussions';
 import { MessageSquare, Youtube, FileText, Film } from 'lucide-react';
 
 interface Props {
@@ -12,11 +14,12 @@ interface Props {
     insights: Insight[];
     feed: FeedItem[];
     news: NewsArticle[];
+    reddit: RedditPost[];
     currentAspects: Record<string, number>;
     movie: Movie | null;
 }
 
-export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, news, currentAspects, movie }) => {
+export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, news, reddit, currentAspects, movie }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'reddit' | 'youtube' | 'wiki' | 'imdb' | 'news'>('overview');
 
     return (
@@ -83,6 +86,69 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                             </div>
                         )}
 
+                        {/* Dynamic Visualizations */}
+                        {movie && (
+                            <div style={{ marginBottom: '2rem' }}>
+                                <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>📊 Dynamic Insights</h3>
+                                <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                                    AI-generated visualizations analyzing sentiment trends, platform activity, and audience engagement.
+                                </p>
+                                <InfiniteVisualizationFeed movieId={movie._id || movie.movie_id || ''} />
+                            </div>
+                        )}
+
+                        {/* Trailers Section */}
+                        {movie && movie.trailers && movie.trailers.length > 0 && (
+                            <div style={{ marginBottom: '2rem' }}>
+                                <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>🎥 Trailers & Videos</h3>
+                                <div style={{ display: 'grid', gap: '1rem' }}>
+                                    {movie.trailers.slice(0, 3).map((trailer: any, index: number) => (
+                                        <div key={index} className="card">
+                                            <div style={{ marginBottom: '0.75rem' }}>
+                                                <h4 style={{ margin: 0, fontSize: '1rem', marginBottom: '0.25rem' }}>
+                                                    {trailer.name}
+                                                </h4>
+                                                <span style={{
+                                                    background: trailer.type === 'Trailer' ? '#646cff' : '#00ff9d',
+                                                    color: '#000',
+                                                    padding: '0.2rem 0.5rem',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 600,
+                                                    textTransform: 'uppercase'
+                                                }}>
+                                                    {trailer.type}
+                                                </span>
+                                            </div>
+                                            <div style={{
+                                                position: 'relative',
+                                                paddingBottom: '56.25%',
+                                                height: 0,
+                                                overflow: 'hidden',
+                                                borderRadius: '8px',
+                                                background: '#000'
+                                            }}>
+                                                <iframe
+                                                    src={`https://www.youtube.com/embed/${trailer.key}`}
+                                                    title={trailer.name}
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                    allowFullScreen
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        left: 0,
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        border: 'none'
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="card" style={{ marginBottom: '2rem' }}>
                             <h3 style={{ marginTop: 0 }}>Sentiment Trend</h3>
                             <SentimentChart data={dailyData} />
@@ -113,23 +179,7 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
             )}
 
             {activeTab === 'reddit' && (
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                    {feed.filter(f => f.source === 'reddit').map(item => (
-                        <div key={item._id} className="card">
-                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', color: '#666', fontSize: '0.8rem' }}>
-                                <MessageSquare size={14} /> Reddit • {new Date(item.created_at).toLocaleDateString()}
-                            </div>
-                            <p style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>{item.text}</p>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                                <a href={item.url} target="_blank" rel="noreferrer" style={{ color: '#646cff' }}>View Post</a>
-                                <span style={{ color: item.sentiment.score > 0 ? '#00ff9d' : '#ff4757' }}>
-                                    {item.sentiment.label} ({item.sentiment.score})
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                    {feed.filter(f => f.source === 'reddit').length === 0 && <p>No Reddit data found.</p>}
-                </div>
+                <RedditDiscussions posts={reddit} />
             )}
 
             {activeTab === 'youtube' && (

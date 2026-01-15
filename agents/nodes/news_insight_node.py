@@ -26,6 +26,24 @@ def news_insight_node(state: AgentState):
         db_client = MongoDBClient()
         db = db_client.get_db()
         
+        # Filter out similar articles using similarity detection
+        from backend.database.similarity import find_similar_news_article
+        
+        filtered_articles = []
+        for article in articles:
+            similar_url = find_similar_news_article(db, movie_id, article['title'], threshold=0.90)
+            if similar_url:
+                logger.info(f"   ⏭️  Skipping similar article: {article['title'][:60]}...")
+            else:
+                filtered_articles.append(article)
+        
+        logger.info(f"   Filtered {len(articles)} articles → {len(filtered_articles)} unique articles")
+        articles = filtered_articles
+        
+        if not articles:
+            logger.info("   No unique articles to process after similarity filtering")
+            return {}
+        
         processed_articles = []
         
         for article in articles:
@@ -81,8 +99,9 @@ RELEVANCE: [score]"""
         
         # Store in MongoDB
         if processed_articles:
-            db.news_articles.insert_many(processed_articles)
-            logger.info(f"   ✅ Saved {len(processed_articles)} news articles to DB")
+            from backend.database.dedup import bulk_upsert_news_articles
+            bulk_upsert_news_articles(db, processed_articles)
+            logger.info(f"   ✅ Saved {len(processed_articles)} news articles to DB (with deduplication)")
         
         return {}
         

@@ -1,5 +1,5 @@
 import { api } from '@/services/api';
-import type { Movie, DailySentiment, Insight, FeedItem, NewsArticle } from '@/services/api';
+import type { Movie, DailySentiment, Insight, FeedItem, NewsArticle, RedditPost } from '@/services/api';
 import { MovieDashboard } from '@/components/MovieDashboard';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -14,14 +14,16 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     let insights: Insight[] = [];
     let feed: FeedItem[] = [];
     let news: NewsArticle[] = [];
+    let reddit: RedditPost[] = [];
 
     try {
-        [movie, dailyData, insights, feed, news] = await Promise.all([
+        [movie, dailyData, insights, feed, news, reddit] = await Promise.all([
             api.getMovie(id).catch(() => null), // Handle 404 gracefully
             api.getDailySentiment(id),
             api.getInsights(id),
             api.getFeed(id),
-            api.getNews(id)
+            api.getNews(id),
+            api.getRedditPosts(id).catch(() => []) // Handle no Reddit data gracefully
         ]);
     } catch (error) {
         console.error('Failed to fetch movie details:', error);
@@ -102,6 +104,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
                 insights={insights}
                 feed={feed}
                 news={news}
+                reddit={reddit}
                 currentAspects={currentAspects}
                 movie={movie}
             />

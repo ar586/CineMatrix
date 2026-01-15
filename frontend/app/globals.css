@@ -33,12 +33,21 @@
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  justify-content: center;
   min-width: 320px;
   min-height: 100vh;
   background: var(--bg-main);
 }
 
+/* Next.js root container */
+body>div {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Legacy Vite/React root */
 #root {
   width: 100%;
   max-width: 1280px;
@@ -78,7 +87,19 @@ button:hover {
 
 .text-gradient {
   background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: bold;
+}
+
+/* Shimmer animation for skeleton loaders */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }

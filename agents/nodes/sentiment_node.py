@@ -18,6 +18,37 @@ class SentimentNode:
         signals = state.get("signals", [])
         movie_id = state["movie_id"]
         
+        # Filter out similar signals using similarity detection
+        db = self.db_client.get_db()
+        if db is not None:
+            from backend.database.similarity import text_similarity
+            
+            # Get existing texts for this movie
+            existing_sentiments = db.source_sentiments.find(
+                {"movie_id": movie_id},
+                {"text": 1}
+            ).limit(200)
+            existing_texts = [s.get("text", "") for s in existing_sentiments]
+            
+            # Filter signals
+            filtered_signals = []
+            for signal in signals:
+                signal_text = signal.get("text", "")
+                is_duplicate = False
+                
+                # Check similarity against existing texts
+                for existing_text in existing_texts:
+                    if text_similarity(signal_text[:500], existing_text[:500]) >= 0.85:
+                        logger.info(f"   ⏭️  Skipping similar signal from {signal['source']}")
+                        is_duplicate = True
+                        break
+                
+                if not is_duplicate:
+                    filtered_signals.append(signal)
+            
+            logger.info(f"   Filtered {len(signals)} signals → {len(filtered_signals)} unique signals")
+            signals = filtered_signals
+        
         results = []
         for signal in signals:
             try:
@@ -47,8 +78,10 @@ class SentimentNode:
         if results:
             db = self.db_client.get_db()
             if db is not None:
-                db.source_sentiments.insert_many(results)
-                logger.info(f"   ✅ Saved {len(results)} sentiment records.")
+                # Use bulk upsert to prevent duplicates
+                from backend.database.dedup import bulk_upsert_sentiments
+                bulk_upsert_sentiments(db, results)
+                logger.info(f"   ✅ Saved {len(results)} sentiment records (with deduplication).")
             else:
                 logger.error("   ❌ Database connection failed.")
                 return {"errors": ["Database connection failed"]}

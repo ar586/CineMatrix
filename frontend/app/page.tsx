@@ -66,9 +66,17 @@ export default async function Home() {
                 }}
               >
                 <div style={{ width: '100%', height: '300px', background: 'linear-gradient(135deg, #1c1c21 0%, #27272a 100%)', borderRadius: '8px', marginBottom: '1rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#646cff', textAlign: 'center', padding: '1rem' }}>
-                    {movie.title}
-                  </span>
+                  {movie.poster_url ? (
+                    <img
+                      src={movie.poster_url}
+                      alt={movie.title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#646cff', textAlign: 'center', padding: '1rem' }}>
+                      {movie.title}
+                    </span>
+                  )}
                 </div>
                 <h3 style={{ margin: '0 0 0.5rem' }}>{movie.title}</h3>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', fontSize: '0.9rem', color: '#a1a1aa' }}>
@@ -101,9 +109,17 @@ export default async function Home() {
               style={{ cursor: 'pointer', padding: '1rem', transition: 'transform 0.2s' }}
             >
               <div style={{ width: '100%', height: '250px', background: 'linear-gradient(135deg, #1c1c21 0%, #27272a 100%)', borderRadius: '8px', marginBottom: '1rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#646cff', textAlign: 'center', padding: '1rem' }}>
-                  {movie.title}
-                </span>
+                {movie.poster_url ? (
+                  <img
+                    src={movie.poster_url}
+                    alt={movie.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#646cff', textAlign: 'center', padding: '1rem' }}>
+                    {movie.title}
+                  </span>
+                )}
               </div>
               <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.5rem' }}>{movie.title}</h3>
               <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>

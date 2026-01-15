@@ -64,6 +64,7 @@ class Movie(BaseModel):
     # TMDB-specific fields
     budget: Optional[int] = None
     revenue: Optional[int] = None
+    poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     tagline: Optional[str] = None
     overview: Optional[str] = None
