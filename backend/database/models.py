@@ -27,9 +27,17 @@ class RottenTomatoesData(BaseModel):
     audience_count: Optional[int] = None
     last_updated: Optional[datetime] = None
 
+
+class WikipediaSection(BaseModel):
+    title: str
+    content: str
+    level: Optional[int] = 1
+
 class WikipediaData(BaseModel):
     summary: Optional[str] = None
     page_title: Optional[str] = None
+    url: Optional[str] = None
+    sections: List[WikipediaSection] = Field(default_factory=list)
     last_updated: Optional[datetime] = None
 
 class Movie(BaseModel):
@@ -367,6 +375,8 @@ class DailyMovieSentiment(BaseModel):
     
     volatility: Optional[float] = None
     
+    insights_generated: bool = Field(default=False, description="Whether insights have been generated for this record")
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:

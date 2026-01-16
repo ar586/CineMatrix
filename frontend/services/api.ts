@@ -4,6 +4,16 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export interface Movie {
     _id: string;
+    wikipedia?: {
+        page_title?: string;
+        summary?: string;
+        url?: string;
+        sections?: Array<{
+            title: string;
+            content: string;
+            level: number;
+        }>;
+    };
     movie_id: string;
     title: string;
     production_companies?: string[];
@@ -11,7 +21,6 @@ export interface Movie {
         key: string;
         name: string;
         type: string;
-        url: string;
     }>;
     collection?: {
         id: number;
@@ -35,11 +44,19 @@ export interface Movie {
         critics_score?: number;
     };
     metascore?: number;
+    vote_average?: number;
+    release_date?: string;
+    runtime_minutes?: number;
+    budget?: number;
+    revenue?: number;
+    certification?: {
+        US?: string;
+    };
     box_office?: string;
     awards?: string;
     daily_sentiment_summary: {
         score: number;
-        volume: number;
+        volume: number | { reddit_posts: number; youtube_videos: number };
         volatility: number;
     } | null;
 }
@@ -47,7 +64,7 @@ export interface Movie {
 export interface DailySentiment {
     date: string;
     overall_sentiment: number;
-    volume: number;
+    volume: number | { reddit_posts: number; youtube_videos: number };
     volatility: number;
     aspect_summary?: Record<string, number>;
 }

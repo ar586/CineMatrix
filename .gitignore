@@ -2,5 +2,20 @@
 venv/
 __pycache__/
 *.pyc
+
+# Logs
+*.log
+
+# Debug and Temp Scripts
+debug_*.py
+test_*.py
+check_*.py
+verify_*.py
+run_*.py
+
+# Data
+*.json
+
+# Misc
 .DS_Store
 

@@ -96,9 +96,13 @@ def imdb_agent_node(state: AgentState):
             # Remove None/Empty values to avoid overwriting with garbage
             update_fields = {k: v for k, v in update_fields.items() if v}
             
+            # Add title to ensure it exists on upsert
+            update_fields["title"] = meta.get("Title", movie_title)
+            
             db.movies.update_one(
                 {"_id": movie_id},
-                {"$set": update_fields}
+                {"$set": update_fields},
+                upsert=True
             )
             logger.info("   ✅ Updated Movie Metadata from OMDB.")
             

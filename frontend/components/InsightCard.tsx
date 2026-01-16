@@ -36,7 +36,7 @@ export const InsightCard: React.FC<Props> = ({ insight }) => {
                 {insight.summary}
             </p>
             <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '1rem' }}>
-                AI Model: {insight.generated_by?.agent || 'Unknown'} • {new Date(insight.generated_at).toLocaleDateString()}
+                AI Model: {insight.generated_by?.agent || 'Unknown'} • {new Date(insight.generated_at.replace(' ', 'T')).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
             </div>
         </div>
     );

@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import List, Dict
+from datetime import datetime, timezone
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from backend import config
@@ -15,8 +16,13 @@ def reddit_agent_node(state: AgentState):
     1. Generates queries.
     2. Fetches from Reddit.
     3. Filters for relevance.
+    4. SAVES RAW POSTS to DB (deduplicated).
     """
+    from backend.database.client import MongoDBClient
+    from backend.database.dedup import bulk_upsert_reddit_posts
+    
     movie_title = state["movie_title"]
+    movie_id = state["movie_id"]
     logger.info(f"🤖 [Reddit Agent] Activated for: {movie_title}")
 
     # 1. Initialize LLM
@@ -116,5 +122,26 @@ def reddit_agent_node(state: AgentState):
                 }
             }
             signals.append(signal)
+            
+            # Create formatted post object for DB
+            reddit_post_doc = {
+                "movie_id": movie_id,
+                "post_id": post.id,
+                "subreddit": post.subreddit.display_name,
+                "title": post.title,
+                "selftext": post.selftext,
+                "url": f"https://reddit.com{post.permalink}",
+                "score": post.score,
+                "num_comments": post.num_comments,
+                "created_at": datetime.fromtimestamp(post.created_utc, timezone.utc),
+                "comments": [] # We could extract comments here if we wanted deeper analysis
+            }
+            
+            # Using bulk upsert from dedicated function
+            db_client = MongoDBClient()
+            db = db_client.get_db()
+            bulk_upsert_reddit_posts(db, [reddit_post_doc])
+            
+            logger.info(f"   ✅ Saved Reddit post {post.id} to DB")
 
     return {"signals": signals}

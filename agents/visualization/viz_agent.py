@@ -16,16 +16,19 @@ class VisualizationAgent:
     Uses LLM to determine the most insightful ways to present data.
     """
     
-    def __init__(self):
-        self.db_client = MongoDBClient()
-        self.llm = LLMService()
+    def __init__(self, db=None, db_client=None, llm_service=None):
+        self.db = db
+        self.db_client = db_client or MongoDBClient()
+        self.llm = llm_service or LLMService()
     
     def aggregate_context(self, movie_id: str) -> Dict:
         """
         Aggregate all relevant data from database for analysis.
         Includes sentiment, volume, aspects, insights, news, metadata, and raw discussions.
         """
-        db = self.db_client.get_db()
+        db = self.db
+        if db is None:
+            db = self.db_client.get_db()
         
         # Validate database connection
         if db is None:
@@ -33,7 +36,7 @@ class VisualizationAgent:
             raise ConnectionError("Failed to connect to database. Please check MongoDB connection settings.")
         
         # Get sentiment data (last 30 days)
-        sentiments = list(db.daily_sentiments.find(
+        sentiments = list(db.daily_movie_sentiments.find(
             {"movie_id": movie_id}
         ).sort("date", -1).limit(30))
         
@@ -168,7 +171,11 @@ class VisualizationAgent:
         Visualizations are generated in background by the daily update pipeline.
         """
         try:
-            db = self.db_client.get_db()
+            logger.info(f"DEBUG: VisualizationAgent.generate_visualizations - self.db: {self.db}")
+            db = self.db
+            if db is None:
+                db = self.db_client.get_db()
+
             if db is None:
                 logger.warning("Database connection unavailable")
                 return self._empty_fallback_response(page)
@@ -302,7 +309,9 @@ Be creative! Consider: sentiment journeys, platform comparisons, aspect radars, 
     
     def _cache_components(self, movie_id: str, visualizations: Dict):
         """Save generated components to database for reuse"""
-        db = self.db_client.get_db()
+        db = self.db
+        if db is None:
+            db = self.db_client.get_db()
         
         for viz in visualizations.get("visualizations", []):
             try:

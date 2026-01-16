@@ -30,6 +30,17 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     }
 
     const latestDay = dailyData[dailyData.length - 1];
+
+    // Handle volume being either a number or an object
+    let displayVolume = 0;
+    if (latestDay?.volume) {
+        if (typeof latestDay.volume === 'number') {
+            displayVolume = latestDay.volume;
+        } else if (typeof latestDay.volume === 'object') {
+            displayVolume = (latestDay.volume.reddit_posts || 0) + (latestDay.volume.youtube_videos || 0);
+        }
+    }
+
     const currentAspects = latestDay?.aspect_summary || {};
     const criticalInsight = insights.find(i => i.severity === 'high');
 
@@ -63,7 +74,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
                             </span>
                         </span>
                         <span style={{ background: '#1c1c21', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', color: '#a1a1aa' }}>
-                            Volume: {latestDay?.volume || 0}
+                            Volume: {displayVolume}
                         </span>
                     </div>
                     {/* Cast & Crew Info Line */}

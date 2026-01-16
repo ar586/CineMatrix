@@ -39,10 +39,16 @@ class TMDBClient:
             params["year"] = year
         
         try:
-            response = requests.get(
+            # Create session with retry strategy
+            session = requests.Session()
+            adapter = requests.adapters.HTTPAdapter(max_retries=3)
+            session.mount("https://", adapter)
+            
+            response = session.get(
                 f"{self.BASE_URL}/search/movie",
                 params=params,
-                headers=self.headers
+                headers=self.headers,
+                timeout=10
             )
             response.raise_for_status()
             data = response.json()

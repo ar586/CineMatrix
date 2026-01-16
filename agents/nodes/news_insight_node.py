@@ -22,7 +22,9 @@ def news_insight_node(state: AgentState):
     logger.info(f"🧠 [News Insight] Analyzing {len(articles)} articles for: {movie_title}")
     
     try:
-        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash-exp", temperature=0.3)
+        from backend import config
+        model_name = getattr(config, "LLM_MODEL", "models/gemma-3-27b-it")
+        llm = ChatGoogleGenerativeAI(model=model_name, temperature=0.3)
         db_client = MongoDBClient()
         db = db_client.get_db()
         
@@ -73,7 +75,7 @@ SENTIMENT: [sentiment]
 RELEVANCE: [score]"""
 
                 response = llm.invoke(prompt)
-                parsed = self._parse_llm_response(response.content)
+                parsed = _parse_llm_response(response.content)
                 
                 # Create news article document
                 news_doc = {
@@ -108,38 +110,38 @@ RELEVANCE: [score]"""
     except Exception as e:
         logger.error(f"   ❌ News insight extraction failed: {e}")
         return {"errors": [str(e)]}
+
+def _parse_llm_response(response: str) -> dict:
+    """Parse LLM response into structured data"""
+    insights = []
+    category = "general"
+    sentiment = "neutral"
+    relevance = 0.5
     
-    def _parse_llm_response(self, response: str) -> dict:
-        """Parse LLM response into structured data"""
-        insights = []
-        category = "general"
-        sentiment = "neutral"
-        relevance = 0.5
-        
-        lines = response.strip().split('\n')
-        current_section = None
-        
-        for line in lines:
-            line = line.strip()
-            if line.startswith('INSIGHTS:'):
-                current_section = 'insights'
-            elif line.startswith('CATEGORY:'):
-                category = line.split(':', 1)[1].strip().lower()
-            elif line.startswith('SENTIMENT:'):
-                sentiment = line.split(':', 1)[1].strip().lower()
-            elif line.startswith('RELEVANCE:'):
-                try:
-                    relevance = float(line.split(':', 1)[1].strip())
-                except:
-                    relevance = 0.5
-            elif current_section == 'insights' and line.startswith('-'):
-                insight = line[1:].strip()
-                if insight:
-                    insights.append(insight)
-        
-        return {
-            'insights': insights[:5],  # Max 5
-            'category': category,
-            'sentiment': sentiment,
-            'relevance': relevance
-        }
+    lines = response.strip().split('\n')
+    current_section = None
+    
+    for line in lines:
+        line = line.strip()
+        if line.startswith('INSIGHTS:'):
+            current_section = 'insights'
+        elif line.startswith('CATEGORY:'):
+            category = line.split(':', 1)[1].strip().lower()
+        elif line.startswith('SENTIMENT:'):
+            sentiment = line.split(':', 1)[1].strip().lower()
+        elif line.startswith('RELEVANCE:'):
+            try:
+                relevance = float(line.split(':', 1)[1].strip())
+            except:
+                relevance = 0.5
+        elif current_section == 'insights' and line.startswith('-'):
+            insight = line[1:].strip()
+            if insight:
+                insights.append(insight)
+    
+    return {
+        'insights': insights[:5],  # Max 5
+        'category': category,
+        'sentiment': sentiment,
+        'relevance': relevance
+    }

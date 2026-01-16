@@ -1,8 +1,12 @@
 
 from pymongo import MongoClient
 import os
+from dotenv import load_dotenv
 
 import certifi
+
+# Load environment variables
+load_dotenv()
 
 class MongoDBClient:
     def __init__(self):
@@ -23,13 +27,33 @@ class MongoDBClient:
         
         self.uri = os.getenv("MONGO_URI", default_uri)
         
+        if not self.uri:
+            print("MongoDB URI not configured. Please set MONGO_URI or MONGO_USER/MONGO_PASSWORD in .env")
+            self.client = None
+            return
+        
         try:
-            self.client = MongoClient(self.uri, tlsCAFile=certifi.where())
+            # For MongoDB Atlas, use tlsCAFile with certifi
+            # For local MongoDB, don't use TLS
+            if "mongodb+srv://" in self.uri or "mongodb.net" in self.uri:
+                # Atlas connection - use TLS
+                self.client = MongoClient(
+                    self.uri, 
+                    tlsCAFile=certifi.where(),
+                    serverSelectionTimeoutMS=5000
+                )
+            else:
+                # Local connection - no TLS
+                self.client = MongoClient(
+                    self.uri,
+                    serverSelectionTimeoutMS=5000
+                )
+            
             # Send a ping to confirm a successful connection
             self.client.admin.command('ping')
-            print("Successfully connected to MongoDB Atlas!")
+            print("✅ Successfully connected to MongoDB!")
         except Exception as e:
-            print(f"MongoDB Connection Error: {e}")
+            print(f"❌ MongoDB Connection Error: {e}")
             self.client = None
 
     def get_client(self):

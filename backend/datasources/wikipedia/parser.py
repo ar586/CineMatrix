@@ -1,3 +1,4 @@
+from datetime import datetime
 
 from .utils import clean_text
 
@@ -10,30 +11,38 @@ class WikipediaParser:
             "title": page.title,
             "url": page.fullurl,
             "summary": clean_text(page.summary),
-            "plot": self._extract_plot(page),
-            # Infobox extraction via wikipedia-api is limited to text.
-            # We might simply capture the summary + plot for now, 
-            # or if we really need key-value pairs, we'd need to parse page.html().
-            # For this step, I will focus on the text content available via API.
+            "sections": self._extract_sections(page),
+            "last_updated": datetime.utcnow()
         }
         return data
 
-    def _extract_plot(self, page):
+    def _extract_sections(self, page):
         """
-        Finds the 'Plot' or 'Synopsis' section in the page sections.
+        Extract interesting sections from the page.
         """
-        # Recursively find sections
-        def find_section(sections, keywords):
-            for s in sections:
-                if any(k in s.title for k in keywords):
-                    return s.text
-                # Check subsections
-                found = find_section(s.sections, keywords)
-                if found:
-                    return found
-            return None
-
-        keywords = ["Plot", "Synopsis", "Plot summary"]
-        plot_text = find_section(page.sections, keywords)
+        interesting_sections = ["Plot", "Synopsis", "Cast", "Production", "Reception", "Critical response", "Box office", "Accolades", "Awards"]
         
-        return clean_text(plot_text) if plot_text else "Plot not found."
+        extracted = []
+        
+        for section in page.sections:
+            # Check if section title matches any keyword
+            if any(key in section.title for key in interesting_sections):
+                content = clean_text(section.text)
+                if content:
+                    extracted.append({
+                        "title": section.title,
+                        "content": content,
+                        "level": 1
+                    })
+                
+                # Also check level 2 subsections for specific details if needed (e.g. Critical reception under Reception)
+                for subst in section.sections:
+                     sub_content = clean_text(subst.text)
+                     if sub_content:
+                        extracted.append({
+                            "title": f"{section.title} - {subst.title}",
+                            "content": sub_content,
+                            "level": 2
+                        })
+
+        return extracted

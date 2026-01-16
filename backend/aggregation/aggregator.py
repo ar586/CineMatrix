@@ -107,14 +107,61 @@ class SentimentAggregator:
         # Insert or Update
         target_collection = db.daily_movie_sentiments
         # Upsert based on movie_id and date
+        # Prepare update payload, excluding _id to avoid collision if it's None
+        update_data = daily_sentiment.model_dump(by_alias=True, exclude={"id"})
+        
         target_collection.update_one(
             {"movie_id": movie_id, "date": date.strftime("%Y-%m-%d")},
-            {"$set": daily_sentiment.model_dump(by_alias=True)},
+            {"$set": update_data},
             upsert=True
         )
         
         print(f"Aggregated sentiment for {movie_id} on {date.date()}: {overall_sentiment}")
+        
+        # Trigger Insight Generation
+        self.run_insight_generation(movie_id, daily_sentiment)
+        
         return daily_sentiment
+
+    def run_insight_generation(self, movie_id: str, daily_sentiment: DailyMovieSentiment):
+        """
+        Run reasoning agent to generate insights based on daily aggregation
+        """
+        try:
+            print("   🧠 Generating Insights...")
+            import sys
+            import os
+            
+            # Ensure we can import from project root
+            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+            if project_root not in sys.path:
+                sys.path.insert(0, project_root)
+
+            try:
+                from agents.reasoning.reasoning_engine import ReasoningEngine
+                from agents.insight.insight_composer import InsightComposer
+            except ImportError as ie:
+                print(f"   Import Error (standard): {ie}")
+                # Fallback: try relative if running as package (unlikely here but good safety)
+                from ...agents.reasoning.reasoning_engine import ReasoningEngine
+                from ...agents.insight.insight_composer import InsightComposer
+            
+            # 1. Generate Hypotheses
+            engine = ReasoningEngine()
+            hypotheses = engine.analyze_daily_update(daily_sentiment)
+            
+            if not hypotheses:
+                print("   No significant hypotheses generated.")
+                return
+
+            # 2. Compose and Store Insights
+            composer = InsightComposer()
+            insights = composer.compose_and_store(hypotheses, movie_id)
+            
+            print(f"   ✅ Generated {len(insights)} dynamic insights.")
+            
+        except Exception as e:
+            print(f"   Insight Generation Failed: {e}")
 
 if __name__ == "__main__":
     # Example usage

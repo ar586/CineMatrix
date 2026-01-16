@@ -4,15 +4,19 @@ import { ChartRenderer } from './ChartRenderer';
 
 interface Visualization {
     id: string;
-    type: 'statistic' | 'chart';
+    type: 'statistic' | 'chart' | 'text_card' | 'custom';
     priority: number;
     component: {
         chart_type?: string;
+        card_type?: string;
+        content?: string;
+        source?: string;
         title: string;
         description: string;
         data_query?: string;
         styling?: {
             color_scheme?: string;
+            theme?: string;
         };
     };
 }
@@ -105,18 +109,67 @@ export function InfiniteVisualizationFeed({ movieId }: Props) {
 }
 
 function VisualizationCard({ visualization }: { visualization: Visualization }) {
-    const { component } = visualization;
+    const { component, type } = visualization;
+
+    const renderContent = () => {
+        if (type === 'text_card' || component.card_type) {
+            const themeColors: Record<string, string> = {
+                'alert': '#ff4757',
+                'info': '#646cff',
+                'highlight': '#00ff9d',
+                'default': '#a1a1aa'
+            };
+            const theme = component.styling?.theme || 'default';
+            const color = themeColors[theme] || themeColors['default'];
+
+            return (
+                <div style={{
+                    background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+                    borderRadius: '8px',
+                    padding: '1.5rem',
+                    borderLeft: `4px solid ${color}`,
+                    minHeight: '200px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                }}>
+                    <h4 style={{ margin: '0 0 1rem', fontSize: '1.2rem', color: '#fff' }}>
+                        {component.title}
+                    </h4>
+                    <p style={{ fontSize: '1rem', lineHeight: '1.6', color: '#ccc', marginBottom: '1rem' }}>
+                        {component.content || component.description}
+                    </p>
+                    {component.source && (
+                        <div style={{ fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
+                            Source: {component.source}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Default to Chart
+        return (
+            <ChartRenderer
+                chartType={component.chart_type || 'line'}
+                title={component.title}
+                description={component.description}
+            />
+        );
+    };
 
     return (
         <div className="card" style={{ padding: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'start', gap: '1rem', marginBottom: '1rem' }}>
                 <div style={{ flex: 1 }}>
                     <h3 style={{ margin: 0, fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                        {getChartIcon(component.chart_type)} {component.title}
+                        {type === 'text_card' ? '📝' : getChartIcon(component.chart_type)} {component.title}
                     </h3>
-                    <p style={{ margin: 0, color: '#999', fontSize: '0.9rem' }}>
-                        {component.description}
-                    </p>
+                    {type !== 'text_card' && (
+                        <p style={{ margin: 0, color: '#999', fontSize: '0.9rem' }}>
+                            {component.description}
+                        </p>
+                    )}
                 </div>
                 <span style={{
                     background: getColorScheme(component.styling?.color_scheme),
@@ -127,18 +180,13 @@ function VisualizationCard({ visualization }: { visualization: Visualization }) 
                     fontWeight: 600,
                     textTransform: 'uppercase'
                 }}>
-                    {component.chart_type || visualization.type}
+                    {component.chart_type || component.card_type || type}
                 </span>
             </div>
 
-            {/* Actual Chart */}
-            <ChartRenderer
-                chartType={component.chart_type || 'line'}
-                title={component.title}
-                description={component.description}
-            />
+            {renderContent()}
 
-            {component.data_query && (
+            {component.data_query && type !== 'text_card' && (
                 <div style={{
                     marginTop: '1rem',
                     padding: '0.75rem',

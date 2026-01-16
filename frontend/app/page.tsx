@@ -14,9 +14,20 @@ export default async function Home() {
   }
 
   // Sort by "Heat" (Volatility + Volume)
+  // Helper to get total volume
+  const getVolume = (v: number | { reddit_posts: number; youtube_videos: number } | undefined) => {
+    if (!v) return 0;
+    if (typeof v === 'number') return v;
+    return (v.reddit_posts || 0) + (v.youtube_videos || 0);
+  };
+
+  // Sort by "Heat" (Volatility + Volume)
   const hotMovies = [...movies].sort((a, b) => {
-    const scoreA = (a.daily_sentiment_summary?.volatility || 0) * 10 + (a.daily_sentiment_summary?.volume || 0);
-    const scoreB = (b.daily_sentiment_summary?.volatility || 0) * 10 + (b.daily_sentiment_summary?.volume || 0);
+    const volA = getVolume(a.daily_sentiment_summary?.volume);
+    const volB = getVolume(b.daily_sentiment_summary?.volume);
+
+    const scoreA = (a.daily_sentiment_summary?.volatility || 0) * 10 + volA;
+    const scoreB = (b.daily_sentiment_summary?.volatility || 0) * 10 + volB;
     return scoreB - scoreA;
   }).slice(0, 3);
 
@@ -82,7 +93,7 @@ export default async function Home() {
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', fontSize: '0.9rem', color: '#a1a1aa' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <TrendingUp size={14} color="#00ff9d" />
-                    {movie.daily_sentiment_summary?.volume || 0} Vol
+                    {getVolume(movie.daily_sentiment_summary?.volume)} Vol
                   </span>
                 </div>
               </div>

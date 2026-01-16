@@ -32,4 +32,4 @@ if __name__ == "__main__":
     fetcher = MovieFetcher()
     info = fetcher.get_movie_info("Inception")
     import json
-    print(json.dumps(info, indent=2))
+    print(json.dumps(info, indent=2, default=str))

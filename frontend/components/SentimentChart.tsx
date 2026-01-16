@@ -12,7 +12,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
     if (active && payload && payload.length) {
         return (
             <div className="card" style={{ padding: '0.5rem', background: '#131316', border: '1px solid #27272a' }}>
-                <p style={{ margin: 0, color: '#a1a1aa' }}>{new Date(label || '').toLocaleDateString()}</p>
+                <p style={{ margin: 0, color: '#a1a1aa' }}>{new Date(label || '').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                 <p style={{ margin: 0, fontWeight: 'bold' }}>
                     Score: <span style={{ color: '#00ff9d' }}>{payload[0].value}</span>
                 </p>
@@ -26,7 +26,7 @@ export const SentimentChart: React.FC<Props> = ({ data }) => {
     // Transform data for chart if needed, or use as is
     return (
         <div style={{ width: '100%', height: 300 }}>
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                     <XAxis

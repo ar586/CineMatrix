@@ -13,7 +13,9 @@ class FirecrawlClient:
         if not self.api_key:
             raise ValueError("FIRECRAWL_API_KEY not found in environment variables")
         self.client = FirecrawlApp(api_key=self.api_key)
-        self.llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash-exp", temperature=0.3)
+        from backend import config
+        model_name = getattr(config, "LLM_MODEL", "models/gemma-3-27b-it")
+        self.llm = ChatGoogleGenerativeAI(model=model_name, temperature=0.3)
     
     def generate_search_queries(self, movie_title: str, cast: list = None) -> list[str]:
         """
@@ -59,23 +61,30 @@ Return ONLY the search queries, one per line, without numbering or explanations.
             search_results = self.client.search(query, limit=limit)
             
             scraped_pages = []
-            for result in search_results.get('data', []):
+            # Iterate over 'web' attribute (List[SearchResultWeb]) if present
+            results_list = getattr(search_results, 'web', []) or []
+            
+            scraped_pages = []
+            for result in results_list:
                 try:
                     # Scrape each URL
-                    scrape_result = self.client.scrape_url(
-                        result['url'],
-                        params={'formats': ['markdown']}
+                    # Use scrape() instead of scrape_url(), pass formats as kwarg
+                    scrape_result = self.client.scrape(
+                        result.url,
+                        formats=['markdown']
                     )
                     
-                    if scrape_result and scrape_result.get('markdown'):
+                    if scrape_result and hasattr(scrape_result, 'markdown') and scrape_result.markdown:
                         scraped_pages.append({
-                            'title': result.get('title', 'Untitled'),
-                            'url': result['url'],
-                            'content': scrape_result['markdown'],
-                            'source': self._extract_domain(result['url'])
+                            'title': getattr(result, 'title', 'Untitled'),
+                            'url': result.url,
+                            'content': scrape_result.markdown,
+                            'source': self._extract_domain(result.url)
                         })
                 except Exception as e:
-                    logger.warning(f"Failed to scrape {result.get('url')}: {e}")
+                    # getattr(result, 'url', 'unknown') just in case
+                    url_str = getattr(result, 'url', 'unknown')
+                    logger.warning(f"Failed to scrape {url_str}: {e}")
                     continue
             
             return scraped_pages

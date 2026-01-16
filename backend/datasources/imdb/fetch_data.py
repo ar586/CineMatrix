@@ -1,41 +1,98 @@
 
+
 from .client import IMDBClient
 from .parser import IMDBParser
+from ..tmdb.client import TMDBClient
+from ..tmdb.parser import TMDBParser as TMDBDataParser
 import os
+import logging
 
-class IMDBFetcher:
+logger = logging.getLogger(__name__)
+
+class MovieDataFetcher:
     def __init__(self):
-        self.client = IMDBClient()
-        self.parser = IMDBParser()
+        self.imdb_client = IMDBClient()
+        self.imdb_parser = IMDBParser()
+        self.tmdb_client = TMDBClient()
+        self.tmdb_parser = TMDBDataParser()
 
     def get_movie_details(self, title):
         """
-        Fetch movie details from IMDB (via OMDB).
+        Fetch movie details using TMDB as primary, OMDB as secondary/fallback.
         """
+        movie_data = {}
+        
+        # 1. Fetch from TMDB (Primary)
         try:
-            # Check for API key before attempting request to save a call
-            if not self.client.api_key:
-                print("IMDB_API_KEY is missing. Skipping IMDB fetch.")
-                return None
-
-            data = self.client.search_movie(title)
-            return self.parser.parse_movie(data)
-            
+            print(f"Fetching TMDB data for: {title}")
+            tmdb_raw = self.tmdb_client.get_full_movie_data(title)
+            if tmdb_raw:
+                movie_data = self.tmdb_parser.parse_movie(tmdb_raw)
         except Exception as e:
-            print(f"Error fetching IMDB data for {title}: {e}")
-            return None
+            logger.error(f"TMDB Fetch Error: {e}")
+            print(f"TMDB Fetch Error: {e}")
+
+        # 2. Fetch from OMDB (Secondary - for Ratings & ID Fallback)
+        try:
+            print(f"Fetching OMDB data for: {title}")
+            omdb_raw = self.imdb_client.search_movie(title)
+            omdb_data = self.imdb_parser.parse_movie(omdb_raw)
+            
+            if omdb_data:
+                # If TMDB failed completely, use OMDB data
+                if not movie_data:
+                    movie_data = omdb_data
+                    # Map OMDB specific fields to schema
+                    movie_data["movie_id"] = omdb_data.get("imdb_id")
+                    movie_data["runtime_minutes"] = int(omdb_data["runtime"].split(" ")[0]) if omdb_data.get("runtime") and "min" in omdb_data["runtime"] else None
+                    
+                    # Normalize Ratings structure if using OMDB as primary
+                    if omdb_data.get("rotten_tomatoes"):
+                         movie_data["rotten_tomatoes"] = {"critics_score": omdb_data["rotten_tomatoes"]}
+                         
+                    if omdb_data.get("metascore"):
+                        movie_data["metascore"] = omdb_data["metascore"] # Already int, schema expects int or dict?
+                        # Model says: metascore: Optional[int] = None. So int is fine.
+                        
+                else:
+                    # Merge OMDB data into TMDB data
+                    # Ratings
+                    if omdb_data.get("rotten_tomatoes"):
+                        movie_data["rotten_tomatoes"] = {"critics_score": omdb_data["rotten_tomatoes"]}
+                    
+                    if omdb_data.get("metascore"):
+                        movie_data["metascore"] = omdb_data["metascore"]
+                        
+                    if omdb_data.get("imdb_rating"):
+                        if not movie_data.get("imdb"): movie_data["imdb"] = {}
+                        movie_data["imdb"]["rating"] = omdb_data["imdb_rating"]
+                        movie_data["imdb"]["votes"] = omdb_data["imdb_votes"]
+                        
+                    if omdb_data.get("box_office") and not movie_data.get("box_office"):
+                        movie_data["box_office"] = omdb_data["box_office"]
+                        
+                    if omdb_data.get("awards"):
+                        movie_data["awards"] = omdb_data["awards"]
+                        
+        except Exception as e:
+            logger.error(f"OMDB Fetch Error: {e}")
+            print(f"OMDB Fetch Error: {e}")
+            
+        return movie_data
 
 if __name__ == "__main__":
     # Example usage
-    # Ensure IMDB_API_KEY is set in env
-    fetcher = IMDBFetcher()
+    fetcher = MovieDataFetcher()
     title = "Inception"
-    print(f"Fetching IMDB details for {title}...")
+    print(f"Fetching details for {title}...")
     details = fetcher.get_movie_details(title)
     
     if details:
-        print(f"Title: {details['title']} ({details['year']})")
-        print(f"Rating: {details['imdb_rating']}/10 ({details['imdb_votes']} votes)")
-        print(f"Plot: {details['plot']}")
+        print(f"Title: {details.get('title')}")
+        print(f"TMDB ID: {details.get('tmdb_id')}")
+        print(f"IMDB Rating: {details.get('imdb', {}).get('rating')}")
+        print(f"Rotten Tomatoes: {details.get('rotten_tomatoes', {}).get('critics_score')}%")
+        print(f"Metascore: {details.get('metascore')}")
+        print(f"Budget: ${details.get('budget'):,}" if details.get('budget') else "Budget: N/A")
     else:
         print("Movie not found or error occurred.")

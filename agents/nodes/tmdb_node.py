@@ -26,10 +26,10 @@ def tmdb_agent_node(state: AgentState):
             logger.warning("   No TMDB data found.")
             return {}
         
-        details = tmdb_data.get("details", {})
-        images = tmdb_data.get("images", {})
-        videos = tmdb_data.get("videos", [])
-        credits = tmdb_data.get("credits", {})
+        details = tmdb_data.get("details") or {}
+        images = tmdb_data.get("images") or {}
+        videos = tmdb_data.get("videos") or []
+        credits = tmdb_data.get("credits") or {}
         
         # Update Movie document in MongoDB
         mongo = MongoDBClient()
@@ -108,10 +108,14 @@ def tmdb_agent_node(state: AgentState):
         # Remove None/empty values
         update_fields = {k: v for k, v in update_fields.items() if v not in [None, "", 0, []]}
         
+        # Add title to ensure it exists on upsert
+        update_fields["title"] = details.get("title", movie_title)
+        
         # Update database
         db.movies.update_one(
             {"_id": movie_id},
-            {"$set": update_fields}
+            {"$set": update_fields},
+            upsert=True
         )
         
         logger.info(f"   ✅ Updated Movie with TMDB data (ID: {tmdb_data['tmdb_id']})")

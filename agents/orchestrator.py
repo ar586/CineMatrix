@@ -7,6 +7,7 @@ from langgraph.graph import StateGraph, END
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from agents.state import AgentState
+from agents.nodes.sentiment_node import SentimentNode  # Import first to avoid segfault with LangChain/Google
 from agents.nodes.reddit_node import reddit_agent_node
 from agents.nodes.youtube_node import youtube_agent_node
 from agents.nodes.wiki_node import wiki_agent_node
@@ -14,7 +15,6 @@ from agents.nodes.imdb_node import imdb_agent_node
 from agents.nodes.tmdb_node import tmdb_agent_node
 from agents.nodes.firecrawl_node import firecrawl_agent_node
 from agents.nodes.news_insight_node import news_insight_node
-from agents.nodes.sentiment_node import SentimentNode
 from agents.nodes.visualization_node import visualization_agent_node
 
 # Basic Logging
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class AgentOrchestrator:
     def __init__(self):
+        print("DEBUG: AgentOrchestrator.__init__ started", flush=True)
         # Initialize Graph
         self.workflow = StateGraph(AgentState)
         
@@ -35,9 +36,11 @@ class AgentOrchestrator:
         self.workflow.add_node("firecrawl", firecrawl_agent_node)
         self.workflow.add_node("news_insight", news_insight_node)
         
+        print("DEBUG: Initializing SentimentNode...", flush=True)
         # Initialize logic class for sentiment which needs __init__
         sentiment_processor = SentimentNode()
         self.workflow.add_node("sentiment", sentiment_processor)
+        print("DEBUG: SentimentNode initialized", flush=True)
         
         # Add visualization node
         self.workflow.add_node("visualization", visualization_agent_node)
