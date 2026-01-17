@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 import sys
@@ -38,15 +38,31 @@ def health_check():
     return {"status": "ok", "db": "connected" if db is not None else "disconnected"}
 
 @app.get("/api/movies", response_model=List[Movie])
-def get_movies(active_only: bool = True):
+def get_movies():
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
-    query = {"is_active": True} if active_only else {}
-    movies = list(db.movies.find(query))
+    # Sort: Active first, then by release date (newest first)
+    cursor = db.movies.find({}).sort([("is_active", -1), ("release_date", -1)])
+    return list(cursor)
+
+@app.put("/api/movies/{movie_id}/status")
+def update_movie_status(movie_id: str, is_active: bool = Body(..., embed=True)):
+    if db is None: raise HTTPException(500, "DB Connection Failed")
     
-    # Sort by 'heat' (volatility or volume) if available? 
-    # For now, just return all.
-    return movies
+    try:
+        query = {"_id": ObjectId(movie_id)}
+    except:
+        query = {"movie_id": movie_id}
+        
+    # Check if exists first to handle string IDs reliably
+    if not db.movies.find_one(query):
+        # Retry with movie_id string if ObjectId failed or didn't match
+        query = {"movie_id": movie_id}
+        if not db.movies.find_one(query):
+             raise HTTPException(404, "Movie not found")
+    
+    db.movies.update_one(query, {"$set": {"is_active": is_active}})
+    return {"status": "updated", "is_active": is_active}
 
 from bson import ObjectId
 

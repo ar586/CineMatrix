@@ -185,23 +185,34 @@ class TMDBClient:
             logger.error(f"Failed to get now playing movies: {e}")
             return []
     
-    def get_trending(self, time_window: str = "week") -> List[Dict]:
+    
+    def discover_movies(self, region: str = "US", language: str = "en", release_date_gte: str = None) -> List[Dict]:
         """
-        Get trending movies.
-        time_window: 'day' or 'week'
+        Discover movies with advanced filters.
         """
-        params = {"api_key": self.api_key}
+        params = {
+            "api_key": self.api_key,
+            "sort_by": "popularity.desc",
+            "include_adult": False,
+            "include_video": False,
+            "page": 1,
+            "region": region,
+            "with_original_language": language
+        }
         
+        if release_date_gte:
+            params["primary_release_date.gte"] = release_date_gte
+
         try:
             response = requests.get(
-                f"{self.BASE_URL}/trending/movie/{time_window}",
+                f"{self.BASE_URL}/discover/movie",
                 params=params,
                 headers=self.headers
             )
             response.raise_for_status()
             return response.json().get("results", [])
         except Exception as e:
-            logger.error(f"Failed to get trending movies: {e}")
+            logger.error(f"Failed to discover movies: {e}")
             return []
     
     def get_full_movie_data(self, title: str, year: Optional[int] = None) -> Optional[Dict]:
