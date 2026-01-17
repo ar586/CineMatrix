@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const isServer = typeof window === 'undefined';
+const API_BASE = isServer
+    ? (process.env.INTERNAL_API_URL || 'http://localhost:8000/api')
+    : '/api';
 
 export interface Movie {
     _id: string;

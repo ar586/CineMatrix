@@ -29,6 +29,14 @@ class TMDBClient:
         Search for a movie by title.
         Returns the first result with TMDB ID and basic info.
         """
+        results = self.search_movies(title, year)
+        return results[0] if results else None
+
+    def search_movies(self, title: str, year: Optional[int] = None) -> List[Dict]:
+        """
+        Search for movies by title.
+        Returns list of results.
+        """
         params = {
             "api_key": self.api_key,
             "query": title,
@@ -53,12 +61,10 @@ class TMDBClient:
             response.raise_for_status()
             data = response.json()
             
-            if data.get("results"):
-                return data["results"][0]  # Return top result
-            return None
+            return data.get("results", [])
         except Exception as e:
             logger.error(f"TMDB search failed for '{title}': {e}")
-            return None
+            return []
     
     def get_movie_details(self, tmdb_id: int) -> Optional[Dict]:
         """

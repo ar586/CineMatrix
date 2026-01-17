@@ -33,7 +33,7 @@ class SentimentEngine:
             refined_aspects[aspect] = round(relevance * score, 2)
             
         # 3. Hybrid Refinement (LLM) if low confidence
-        if confidence < 0.85:
+        if confidence < 0.6:
             logger.info(f"🔍 Low confidence ({confidence:.2f}). Requesting LLM refinement...")
             try:
                 metadata_str = json.dumps(metadata, indent=2, default=str)

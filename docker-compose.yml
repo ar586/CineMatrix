@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # Database
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - cinematrix-net
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/cinematrix
+      # Pass through other env vars from .env
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
+      - SERPAPI_API_KEY=${SERPAPI_API_KEY}
+      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}
+      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET}
+    depends_on:
+      - mongo
+    networks:
+      - cinematrix-net
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # URL to backend container (for SSR/Rewrites)
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - cinematrix-net
+
+networks:
+  cinematrix-net:
+    driver: bridge
+
+volumes:
+  mongo_data:

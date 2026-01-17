@@ -105,7 +105,7 @@ export default async function Home() {
       {/* ACTIVE GRID */}
       <h2 style={{ fontSize: '2rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <span style={{ width: '8px', height: '32px', background: '#646cff', borderRadius: '4px' }}></span>
-        Active Releases
+        Movie Library
       </h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '2rem' }}>
@@ -142,6 +142,6 @@ export default async function Home() {
           </Link>
         ))}
       </div>
-    </div>
+    </div >
   );
 }
