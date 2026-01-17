@@ -111,9 +111,18 @@ def tmdb_agent_node(state: AgentState):
         # Add title to ensure it exists on upsert
         update_fields["title"] = details.get("title", movie_title)
         
+        # Smart query handling
+        from bson import ObjectId
+        query = {"_id": movie_id}
+        if isinstance(movie_id, str):
+            if ObjectId.is_valid(movie_id):
+                query = {"_id": ObjectId(movie_id)}
+            else:
+                query = {"movie_id": movie_id}
+
         # Update database
         db.movies.update_one(
-            {"_id": movie_id},
+            query,
             {"$set": update_fields},
             upsert=True
         )

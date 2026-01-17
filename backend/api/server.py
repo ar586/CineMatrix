@@ -11,7 +11,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 import backend.config # Load env
 from backend.database.client import MongoDBClient
-from backend.database.models import Movie, DailyMovieSentiment, Insight, SentimentAnalysis
+from backend.database.models import Movie, DailyMovieSentiment, Insight, SentimentAnalysis, YouTubeVideo
+from backend.datasources.youtube.fetch_videos import YouTubeFetcher
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -62,6 +63,14 @@ def get_movie(movie_id: str):
         
     if not movie:
         raise HTTPException(404, "Movie not found")
+    
+    # Normalize IMDB data: populate nested imdb object from flat fields if missing
+    if movie.get("imdb") is None and (movie.get("imdb_rating") or movie.get("imdb_votes")):
+        movie["imdb"] = {
+            "rating": movie.get("imdb_rating"),
+            "votes": movie.get("imdb_votes")
+        }
+    
     return movie
 
 @app.get("/api/movies/{movie_id}/daily", response_model=List[DailyMovieSentiment])
@@ -167,6 +176,13 @@ def get_reddit_posts(movie_id: str, limit: int = 10):
             reverse=True
         )[:5]
         
+        # Fetch sentiment
+        sentiment = db.source_sentiments.find_one({
+            "movie_id": movie_id,
+            "source": "reddit",
+            "source_ref.post_id": post.get("post_id")
+        })
+        
         reddit_posts.append({
             "_id": str(post["_id"]),
             "post_id": post.get("post_id", ""),
@@ -176,6 +192,7 @@ def get_reddit_posts(movie_id: str, limit: int = 10):
             "url": post.get("url", ""),
             "score": post.get("score", 0),
             "num_comments": post.get("num_comments", 0),
+            "sentiment": sentiment["sentiment"] if sentiment else None,
             "created_at": post.get("created_at", datetime.now()).isoformat(),
             "comments": [{
                 "comment_id": c.get("comment_id", ""),
@@ -201,6 +218,61 @@ def get_visualizations(movie_id: str, page: int = 1, limit: int = 5):
     except Exception as e:
         logger.error(f"Visualization generation failed: {e}")
         raise HTTPException(500, f"Failed to generate visualizations: {str(e)}")
+
+@app.get("/api/movies/{movie_id}/youtube", response_model=List[dict])
+def get_youtube_videos(movie_id: str):
+    """
+    Get rich YouTube videos (Trailers + Reviews) with channel info and comments.
+    Fetcher is instantiated per request which is okay for now.
+    """
+    if db is None: raise HTTPException(500, "DB Connection Failed")
+    
+    # Resolve movie title
+    try:
+        if ObjectId.is_valid(movie_id):
+            movie = db.movies.find_one({"_id": ObjectId(movie_id)})
+        else:
+             movie = db.movies.find_one({"movie_id": movie_id})
+    except:
+        movie = db.movies.find_one({"movie_id": movie_id})
+        
+    if not movie:
+        raise HTTPException(404, "Movie not found")
+        
+    title = movie["title"]
+    # Use canonical IMDB ID for linking if available
+    target_id = movie.get("movie_id", movie_id)
+    
+    # Fetch from Database (Stored by Agents)
+    cursor = db.youtube_videos.find({"movie_id": target_id})
+    videos = list(cursor)
+    
+    # Transform for frontend
+    result = []
+    for v in videos:
+        # Fetch sentiment
+        sentiment = db.source_sentiments.find_one({
+            "movie_id": target_id,
+            "source": "youtube", 
+            "source_ref.video_id": v.get("video_id")
+        })
+        
+        result.append({
+            "video_id": v.get("video_id"),
+            "video_type": v.get("video_type", "review"),
+            "title": v.get("title"),
+            "channel": v.get("channel"),
+            "channel_id": v.get("channel_id"),
+            "channel_image": v.get("channel_image"),
+            "channel_subs": v.get("channel_subs"),
+            "url": v.get("url"),
+            "published_at": v.get("published_at"),
+            "stats": v.get("stats", {"views": 0, "likes": 0, "comment_count": 0}),
+            "sentiment": sentiment["sentiment"] if sentiment else None,
+            "comments": v.get("comments", [])
+        })
+        
+    return result
 
 
 if __name__ == "__main__":

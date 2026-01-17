@@ -107,6 +107,18 @@ export function RedditDiscussions({ posts }: RedditDiscussionsProps) {
                                     <MessageSquare size={16} />
                                     {post.num_comments} comments
                                 </span>
+                                {post.sentiment && (
+                                    <span style={{
+                                        background: post.sentiment.score > 0 ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 71, 87, 0.1)',
+                                        color: post.sentiment.score > 0 ? '#00ff9d' : '#ff4757',
+                                        padding: '2px 8px',
+                                        borderRadius: '12px',
+                                        fontSize: '0.8rem',
+                                        border: `1px solid ${post.sentiment.score > 0 ? 'rgba(0, 255, 157, 0.3)' : 'rgba(255, 71, 87, 0.3)'}`
+                                    }}>
+                                        {post.sentiment.label.toUpperCase()} ({post.sentiment.score})
+                                    </span>
+                                )}
                             </div>
                         </div>
 

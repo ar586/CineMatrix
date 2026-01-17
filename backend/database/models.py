@@ -83,6 +83,18 @@ class Movie(BaseModel):
     trailers: List[Dict] = Field(default_factory=list)
     collection: Optional[Dict] = None
     
+    # IMDB flat fields (for backward compatibility with OMDB data)
+    year: Optional[str] = None
+    rated: Optional[str] = None
+    runtime: Optional[str] = None
+    genre: Optional[Union[str, List[str]]] = None
+    director: Optional[str] = None
+    actors: Optional[Union[str, List[str]]] = None
+    plot: Optional[str] = None
+    poster: Optional[str] = None
+    imdb_rating: Optional[float] = None
+    imdb_votes: Optional[float] = None
+    
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
@@ -150,12 +162,17 @@ class YouTubeVideo(BaseModel):
     
     title: str
     channel: str
+    channel_id: Optional[str] = None
+    channel_image: Optional[str] = None
+    channel_subs: Optional[str] = None
     url: str
     
     published_at: Optional[datetime] = None
     ingested_at: datetime = Field(default_factory=datetime.utcnow)
     
     stats: Optional[YouTubeStats] = None
+    
+    transcript: Optional[str] = None
     
     comments: List[YouTubeComment] = Field(default_factory=list)
     

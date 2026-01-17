@@ -58,6 +58,17 @@ def bulk_upsert_sentiments(db, sentiments: List[Dict[str, Any]]):
         
     operations = []
     for s in sentiments:
+        # Safety: Remove _id if it exists
+        if "_id" in s:
+            del s["_id"]
+            
+        with open("/Users/mac/Desktop/CineMatrix/debug_sentiments.log", "a") as f:
+            import json
+            try:
+                f.write(json.dumps(s, default=str) + "\n")
+            except:
+                f.write(f"Could not dump s: {s}\n")
+
         operations.append(
             UpdateOne(
                 {

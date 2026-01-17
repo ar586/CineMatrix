@@ -13,12 +13,15 @@ def youtube_agent_node(state: AgentState):
     """
     LangGraph node for YouTube data fetching.
     """
+    from backend.database.client import MongoDBClient
+    from backend.database.dedup import bulk_upsert_youtube_videos
+    from backend.database.similarity import find_similar_youtube_video
     movie_title = state["movie_title"]
     logger.info(f"🎥 [YouTube Agent] Activated for: {movie_title}")
 
     # 1. Initialize LLM
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model=config.LLM_MODEL,
         google_api_key=config.GEMINI_API_KEY,
         temperature=0.7
     )
@@ -62,30 +65,21 @@ def youtube_agent_node(state: AgentState):
         logger.warning("   No videos found.")
         return {"signals": []}
 
-    # 4. Filter (LLM)
-    candidates = []
+    # 4. Filter (Intelligent Validator)
+    from agents.validator import ContentValidator
+    validator = ContentValidator()
+    
+    selected_indices = []
     for i, item in enumerate(raw_videos):
         snippet = item["snippet"]
-        candidates.append(f"INDEX {i}: Title: {snippet['title']} | Channel: {snippet['channelTitle']} | Desc: {snippet['description'][:150]}")
-    
-    candidates_str = "\n".join(candidates)
-    
-    filter_prompt = f"""
-    Select the most insightful video reviews for "{movie_title}".
-    Ignore clickbait or simple reactions.
-    CANDIDATES:
-    {candidates_str}
-    
-    Output strictly a JSON list of integer INDICES. Example: [0, 1]
-    """
-    
-    selected_indices = list(range(len(raw_videos))) # Default all
-    # try:
-    #     response = llm.invoke([HumanMessage(content=filter_prompt)])
-    #     text = response.content.replace("```json", "").replace("```", "").strip()
-    #     selected_indices = json.loads(text)
-    # except Exception:
-    #     pass # Fallback to all
+        content = f"Title: {snippet['title']}\nChannel: {snippet['channelTitle']}\nDescription: {snippet['description'][:500]}"
+        
+        if validator.validate(content, movie_title, "youtube_video"):
+             selected_indices.append(i)
+             
+    if not selected_indices:
+        logger.warning("   All YouTube videos failed intelligent validation.")
+        return {"signals": []}
 
     # 5. Format
     signals: List[SourceSentiment] = []
@@ -105,5 +99,36 @@ def youtube_agent_node(state: AgentState):
                 }
             }
             signals.append(signal)
+            
+            # Prepare Video Object for DB
+            video_doc = {
+                "movie_id": state["movie_id"],
+                "video_id": vid_id,
+                "video_type": "review", # Assumption based on query
+                "title": snippet['title'],
+                "channel": snippet['channelTitle'],
+                "channel_id": snippet.get("channelId"),
+                "url": f"https://youtube.com/watch?v={vid_id}",
+                "published_at": snippet["publishedAt"], # Should technically parse this
+                "description": snippet['description'],
+                "stats": {
+                    "views": 0, # Not fetching stats in this basic search
+                    "likes": 0,
+                    "comment_count": 0
+                }
+            }
+            
+            # Deduplication Check
+            db_client = MongoDBClient()
+            db = db_client.get_db()
+            
+            similar_vid_id = find_similar_youtube_video(db, state["movie_id"], snippet['title'])
+            if similar_vid_id and similar_vid_id != vid_id:
+                logger.info(f"   ⏭️  Skipping similar YouTube video: {snippet['title'][:50]}... (Matched {similar_vid_id})")
+                continue
+
+            # Using bulk upsert
+            bulk_upsert_youtube_videos(db, [video_doc])
+            logger.info(f"   ✅ Saved YouTube video {vid_id} to DB")
 
     return {"signals": signals}

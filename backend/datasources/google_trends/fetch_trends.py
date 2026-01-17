@@ -12,28 +12,26 @@ class TrendsFetcher:
 
     def get_movie_trends(self, title, timeframe='today 5-y'):
         """
-        Fetch trends data for a movie title.
+        Fetch trends data for a movie title using SerpApi.
         Returns a dict with 'interest_over_time' and 'related_queries'.
         """
         try:
-            # Add small random sleep to avoid rate limits if called rapidly (though single call is fine)
-            # time.sleep(random.uniform(1, 2))
-            
             # Format timeframe
             tf = format_timeframe(timeframe)
             
-            # Build payload
-            # We treat the title as the keyword.
-            kw_list = [title]
-            self.client.build_payload(kw_list, timeframe=tf)
+            # Fetch Data via SerpApi
+            # SerpApi expects date format like "today 12-m" or "2024-01-01 2024-12-31"
+            # Our utils.format_timeframe handles this conversion usually.
             
-            # Fetch Data
-            interest_df = self.client.interest_over_time()
-            related_dict = self.client.related_queries()
+            raw_data = self.client.get_trends_data(query=title, timeframe=tf)
+            
+            if "error" in raw_data:
+                print(f"SerpApi Error: {raw_data['error']}")
+                return None
             
             # Parse Data
-            interest_data = self.parser.parse_interest_over_time(interest_df)
-            related_data = self.parser.parse_related_queries(related_dict)
+            interest_data = self.parser.parse_interest_over_time(raw_data)
+            related_data = self.parser.parse_related_queries(raw_data)
             
             return {
                 "keyword": title,
@@ -44,7 +42,6 @@ class TrendsFetcher:
             
         except Exception as e:
             print(f"Error fetching trends for {title}: {e}")
-            # If rate limit (429), we might want to return specific error
             return None
 
 # Simple main for testing
@@ -57,9 +54,11 @@ if __name__ == "__main__":
     if data:
         print(f"Found {len(data['interest_over_time'])} data points for interest over time.")
         if data['related_queries']:
-            print("Top related queries:")
-            top = data['related_queries'].get(title, {}).get('top', [])
-            for t in top[:5]:
-                print(f"- {t['query']} ({t['value']})")
+            print("Related queries found.")
+            for query_key, queries in data['related_queries'].items():
+                print(f"--- For query: {query_key} ---")
+                top = queries.get('top', [])
+                for t in top[:5]:
+                    print(f"  [Top] {t['query']} ({t['value']})")
     else:
         print("No data found or error occurred.")

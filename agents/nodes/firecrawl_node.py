@@ -31,15 +31,24 @@ def firecrawl_agent_node(state: AgentState):
             all_articles.extend(articles)
             logger.info(f"   Scraped {len(articles)} articles for: {query[:50]}...")
         
-        # Deduplicate by URL
+        # Deduplicate, Validate, and Filter
+        from agents.validator import ContentValidator
+        validator = ContentValidator()
+        
         seen_urls = set()
         unique_articles = []
+        
         for article in all_articles:
             if article['url'] not in seen_urls:
-                seen_urls.add(article['url'])
-                unique_articles.append(article)
+                # Validate relevance
+                # Firecrawl often returns 'markdown' or 'content'
+                content_snippet = article.get('markdown', '') or article.get('description', '') or article.get('title', '')
+                
+                if validator.validate(content_snippet[:1000], movie_title, "news_article"):
+                    seen_urls.add(article['url'])
+                    unique_articles.append(article)
         
-        logger.info(f"   ✅ Total unique articles: {len(unique_articles)}")
+        logger.info(f"   ✅ validated {len(unique_articles)} relevant articles from {len(all_articles)} raw results.")
         
         # Store articles in state for news insight node
         return {"news_articles": unique_articles}

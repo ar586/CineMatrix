@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import type { DailySentiment, Insight, FeedItem, Movie, NewsArticle, RedditPost } from '@/services/api';
+import React, { useState, useEffect } from 'react';
+import { api, DailySentiment, Insight, FeedItem, Movie, NewsArticle, RedditPost, YouTubeVideo } from '@/services/api';
 import dynamic from 'next/dynamic';
 
 const SentimentChart = dynamic(() => import('@/components/SentimentChart').then(mod => mod.SentimentChart), { ssr: false });
@@ -9,7 +9,7 @@ const AspectRadar = dynamic(() => import('@/components/AspectRadar').then(mod =>
 import { InsightCard } from '@/components/InsightCard';
 import { InfiniteVisualizationFeed } from '@/components/InfiniteVisualizationFeed';
 import { RedditDiscussions } from '@/components/RedditDiscussions';
-import { MessageSquare, Youtube, FileText, Film } from 'lucide-react';
+import { MessageSquare, Youtube, FileText, Film, ThumbsUp, Eye, Users } from 'lucide-react';
 
 interface Props {
     dailyData: DailySentiment[];
@@ -23,6 +23,33 @@ interface Props {
 
 export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, news, reddit, currentAspects, movie }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'reddit' | 'youtube' | 'wiki' | 'imdb' | 'news'>('overview');
+    const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideo[]>([]);
+    const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+
+    useEffect(() => {
+        if (activeTab === 'youtube' && movie?._id) {
+            console.log("Fetching YouTube videos for:", movie._id);
+            api.getMovieYoutubeVideos(movie._id)
+                .then(data => {
+                    console.log("Received YouTube Data:", data);
+                    setYoutubeVideos(data);
+                })
+                .catch(err => console.error("Failed to fetch YouTube videos", err));
+        }
+    }, [activeTab, movie]);
+
+    const toggleComments = (videoId: string) => {
+        setExpandedComments(prev => ({ ...prev, [videoId]: !prev[videoId] }));
+    };
+
+    const getSentimentForVideo = (videoId: string) => {
+        const feedItem = feed.find(f => f.source === 'youtube' && f.url.includes(videoId));
+        return feedItem?.sentiment;
+    };
+
+    if (activeTab === 'youtube') {
+        console.log("Render Cycle - YouTube Videos:", youtubeVideos);
+    }
 
     return (
         <div>
@@ -185,22 +212,106 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
             )}
 
             {activeTab === 'youtube' && (
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                    {feed.filter(f => f.source === 'youtube').map(item => (
-                        <div key={item._id} className="card">
-                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', color: '#666', fontSize: '0.8rem' }}>
-                                <Youtube size={14} /> YouTube • {new Date(item.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                <div style={{ display: 'grid', gap: '1.5rem' }}>
+
+                    {/* Rich YouTube Cards */}
+                    {youtubeVideos.map(video => (
+                        <div key={video.video_id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch' }}>
+                                <div style={{ width: '280px', position: 'relative', flexShrink: 0 }}>
+                                    <a href={`https://www.youtube.com/watch?v=${video.video_id}`} target="_blank" rel="noreferrer">
+                                        <img
+                                            src={`https://i.ytimg.com/vi/${video.video_id}/mqdefault.jpg`}
+                                            alt={video.title}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                        <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', fontSize: '0.7rem', color: '#fff' }}>
+                                            {video.video_type}
+                                        </div>
+                                    </a>
+                                </div>
+                                <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                    <h4 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', lineHeight: '1.3', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <a href={`https://www.youtube.com/watch?v=${video.video_id}`} target="_blank" rel="noreferrer" style={{ color: '#fff', textDecoration: 'none', flex: 1 }}>
+                                            {video.title}
+                                        </a>
+                                        {(() => {
+                                            const sentiment = video.sentiment || getSentimentForVideo(video.video_id);
+                                            if (sentiment) {
+                                                return (
+                                                    <span style={{
+                                                        fontSize: '0.75rem',
+                                                        background: sentiment.score > 0 ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 71, 87, 0.1)',
+                                                        color: sentiment.score > 0 ? '#00ff9d' : '#ff4757',
+                                                        padding: '2px 6px',
+                                                        borderRadius: 4,
+                                                        whiteSpace: 'nowrap',
+                                                        marginLeft: '0.5rem'
+                                                    }}>
+                                                        {sentiment.label} ({sentiment.score.toFixed(2)})
+                                                    </span>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
+                                    </h4>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem', padding: '0.5rem 0' }}>
+                                        {video.channel_image ? (
+                                            <img src={video.channel_image} alt={video.channel} style={{ width: 32, height: 32, borderRadius: '50%' }} />
+                                        ) : (
+                                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Youtube size={16} /></div>
+                                        )}
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ color: '#eee', fontSize: '0.9rem', fontWeight: 500 }}>{video.channel}</span>
+                                            {video.channel_subs && <span style={{ color: '#666', fontSize: '0.75rem' }}>{parseInt(video.channel_subs).toLocaleString()} subs</span>}
+                                        </div>
+                                    </div>
+                                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '0.8rem' }}>
+                                        <div style={{ display: 'flex', gap: '1rem', color: '#888', fontSize: '0.85rem' }}>
+                                            {video.stats?.views && <span>{parseInt(video.stats.views as any).toLocaleString()} views</span>}
+                                            {video.stats?.likes && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><ThumbsUp size={12} /> {parseInt(video.stats.likes as any).toLocaleString()}</span>}
+                                        </div>
+                                        {video.comments && video.comments.length > 0 && (
+                                            <button onClick={() => toggleComments(video.video_id)} style={{ background: 'transparent', border: '1px solid #444', color: '#ccc', padding: '0.3rem', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' }}>
+                                                {expandedComments[video.video_id] ? 'Hide Comments' : 'Top Comments'}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <p style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>{item.text}</p>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                                <a href={item.url} target="_blank" rel="noreferrer" style={{ color: '#646cff' }}>Watch Video</a>
-                                <span style={{ color: item.sentiment.score > 0 ? '#00ff9d' : '#ff4757' }}>
-                                    {item.sentiment.label} ({item.sentiment.score})
-                                </span>
-                            </div>
+                            {expandedComments[video.video_id] && (
+                                <div style={{ background: '#111', padding: '1rem', borderTop: '1px solid #222' }}>
+                                    {video.comments.map(c => (
+                                        <div key={c.comment_id} style={{ marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid #222' }}>
+                                            <div dangerouslySetInnerHTML={{ __html: c.text }} style={{ color: '#ccc', fontSize: '0.9rem' }} />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     ))}
-                    {feed.filter(f => f.source === 'youtube').length === 0 && <p>No YouTube data found.</p>}
+
+                    {/* Fallback */}
+                    {youtubeVideos.length === 0 && (
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            {feed.filter(f => f.source === 'youtube').map(item => (
+                                <div key={item._id} className="card">
+                                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', color: '#666', fontSize: '0.8rem' }}>
+                                        <Youtube size={14} /> YouTube
+                                    </div>
+                                    <p style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>{item.text}</p>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                                        <a href={item.url} target="_blank" rel="noreferrer" style={{ color: '#646cff' }}>Watch Video</a>
+                                        <span style={{ color: item.sentiment.score > 0 ? '#00ff9d' : '#ff4757' }}>
+                                            {item.sentiment.label} ({item.sentiment.score})
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                            {feed.filter(f => f.source === 'youtube').length === 0 && <p>No YouTube data found.</p>}
+                        </div>
+                    )}
+
                 </div>
             )}
 
@@ -272,10 +383,10 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                         <>
                             {/* Top Section: Ratings & Poster */}
                             <div className="card" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-                                {/* Poster (if available via TMDB or Collection) */}
-                                {movie.poster_url ? (
+                                {/* Poster (prefer IMDB poster, fallback to TMDB) */}
+                                {(movie.poster || movie.poster_url) ? (
                                     <img
-                                        src={movie.poster_url}
+                                        src={movie.poster || movie.poster_url}
                                         alt={movie.title}
                                         style={{ width: '150px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
                                     />
@@ -286,17 +397,29 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                                 )}
 
                                 <div style={{ flex: 1 }}>
-                                    <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>{movie.title} {movie.release_date && `(${new Date(movie.release_date).getFullYear()})`}</h2>
+                                    <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>
+                                        {movie.title} {(movie.year || (movie.release_date && `(${new Date(movie.release_date).getFullYear()})`))}
+                                    </h2>
                                     {movie.tagline && <p style={{ fontStyle: 'italic', color: '#999', marginBottom: '1.5rem' }}>"{movie.tagline}"</p>}
+                                    {movie.rated && (
+                                        <div style={{ display: 'inline-block', background: '#333', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                                            Rated: {movie.rated}
+                                        </div>
+                                    )}
 
                                     {/* Ratings Grid */}
                                     <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
-                                        {/* IMDb */}
+                                        {/* IMDb - use flat field with fallback to nested */}
                                         <div style={{ textAlign: 'center' }}>
                                             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f5c518' }}>
-                                                {movie.imdb?.rating || 'N/A'}<span style={{ fontSize: '0.8rem', color: '#666' }}>/10</span>
+                                                {movie.imdb_rating || movie.imdb?.rating || 'N/A'}<span style={{ fontSize: '0.8rem', color: '#666' }}>/10</span>
                                             </div>
                                             <div style={{ fontSize: '0.8rem', color: '#666' }}>IMDb</div>
+                                            {(movie.imdb_votes || movie.imdb?.votes) && (
+                                                <div style={{ fontSize: '0.7rem', color: '#555', marginTop: '0.25rem' }}>
+                                                    {(movie.imdb_votes || movie.imdb?.votes)?.toLocaleString()} votes
+                                                </div>
+                                            )}
                                         </div>
                                         {/* Rotten Tomatoes */}
                                         {movie.rotten_tomatoes?.critics_score && (
@@ -333,8 +456,8 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
 
                                     {/* Quick Stats */}
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem', fontSize: '0.9rem' }}>
-                                        <div><strong style={{ color: '#666' }}>Runtime:</strong> {movie.runtime_minutes} min</div>
-                                        <div><strong style={{ color: '#666' }}>Rated:</strong> {movie.certification?.US || 'N/A'}</div>
+                                        <div><strong style={{ color: '#666' }}>Runtime:</strong> {movie.runtime || (movie.runtime_minutes && `${movie.runtime_minutes} min`) || 'N/A'}</div>
+                                        <div><strong style={{ color: '#666' }}>Genre:</strong> {Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre || movie.genres?.join(', ') || 'N/A'}</div>
                                         <div><strong style={{ color: '#666' }}>Budget:</strong> {movie.budget ? `$${(movie.budget / 1000000).toFixed(1)}M` : 'N/A'}</div>
                                         <div><strong style={{ color: '#666' }}>Revenue:</strong> {movie.revenue ? `$${(movie.revenue / 1000000).toFixed(1)}M` : 'N/A'}</div>
                                         <div><strong style={{ color: '#666' }}>Box Office:</strong> {movie.box_office || 'N/A'}</div>
@@ -342,17 +465,17 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                                 </div>
                             </div>
 
-                            {/* Overview Section */}
+                            {/* Overview/Plot Section */}
                             <div className="card">
                                 <h3>Plot Overview</h3>
-                                <p style={{ lineHeight: '1.6', color: '#ddd' }}>{movie.overview || 'No overview available.'}</p>
+                                <p style={{ lineHeight: '1.6', color: '#ddd' }}>{movie.plot || movie.overview || 'No overview available.'}</p>
                             </div>
 
                             {/* Cast & Crew Section */}
                             <div className="card">
                                 <h3>Cast & Crew</h3>
                                 <div style={{ marginBottom: '1rem' }}>
-                                    <strong style={{ color: '#666' }}>Director:</strong> {movie.crew?.director || 'N/A'}
+                                    <strong style={{ color: '#666' }}>Director:</strong> {movie.director || movie.crew?.director || 'N/A'}
                                 </div>
                                 <div style={{ marginBottom: '1rem' }}>
                                     <strong style={{ color: '#666' }}>Writers:</strong> {movie.crew?.writers?.join(', ') || 'N/A'}
@@ -360,11 +483,14 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                                 <div>
                                     <strong style={{ color: '#666' }}>Cast:</strong>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                        {movie.cast && movie.cast.length > 0 ? movie.cast.slice(0, 10).map((actor, idx) => (
-                                            <span key={idx} style={{ background: '#1c1c21', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.9rem', border: '1px solid #333' }}>
-                                                {actor}
-                                            </span>
-                                        )) : 'N/A'}
+                                        {(() => {
+                                            const castList = movie.cast || (typeof movie.actors === 'string' ? movie.actors.split(', ') : movie.actors);
+                                            return castList && castList.length > 0 ? castList.slice(0, 10).map((actor: string, idx: number) => (
+                                                <span key={idx} style={{ background: '#1c1c21', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.9rem', border: '1px solid #333' }}>
+                                                    {actor}
+                                                </span>
+                                            )) : 'N/A';
+                                        })()}
                                     </div>
                                 </div>
                             </div>

@@ -1,34 +1,32 @@
 
-from pytrends.request import TrendReq
+import os
+from serpapi import GoogleSearch
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class GoogleTrendsClient:
-    def __init__(self, hl='en-US', tz=360):
-        """
-        Initialize the Google Trends client.
-        :param hl: Host Language (e.g., 'en-US')
-        :param tz: Timezone Offset (e.g., 360 for CST)
-        """
-        self.pytrends = TrendReq(hl=hl, tz=tz)
+    def __init__(self):
+        self.api_key = os.getenv("SERPAPI_API_KEY")
+        if not self.api_key:
+            raise ValueError("SERPAPI_API_KEY not found in environment variables.")
 
-    def build_payload(self, kw_list, timeframe='today 5-y', geo=''):
+    def get_trends_data(self, query, timeframe='today 5-y', geo='US'):
         """
-        Build the payload for the request.
-        :param kw_list: List of keywords to search for.
-        :param timeframe: Date range (e.g., 'today 5-y', 'now 1-H').
-        :param geo: Geographic location (e.g., 'US', 'IN').
+        Fetch trends data using SerpApi.
+        :param query: Search query (e.g. movie title)
+        :param timeframe: Date range (e.g. 'today 12-m', '2016-10-10 2017-10-10')
+        :param geo: Geographic location (e.g. 'US')
+        :return: Dict containing the JSON response
         """
-        self.pytrends.build_payload(kw_list, cat=0, timeframe=timeframe, geo=geo, gprop='')
+        params = {
+            "engine": "google_trends",
+            "q": query,
+            "date": timeframe,
+            "geo": geo,
+            "api_key": self.api_key
+        }
 
-    def interest_over_time(self):
-        """
-        Get interest over time.
-        Returns a pandas DataFrame.
-        """
-        return self.pytrends.interest_over_time()
-
-    def related_queries(self):
-        """
-        Get related queries.
-        Returns a dictionary of DataFrames.
-        """
-        return self.pytrends.related_queries()
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        return results

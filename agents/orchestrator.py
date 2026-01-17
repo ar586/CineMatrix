@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, END, START
 
 # Ensure backend modules can be imported
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -15,6 +15,7 @@ from agents.nodes.imdb_node import imdb_agent_node
 from agents.nodes.tmdb_node import tmdb_agent_node
 from agents.nodes.firecrawl_node import firecrawl_agent_node
 from agents.nodes.news_insight_node import news_insight_node
+from agents.nodes.trends_node import trends_agent_node
 from agents.nodes.visualization_node import visualization_agent_node
 
 # Basic Logging
@@ -35,51 +36,51 @@ class AgentOrchestrator:
         self.workflow.add_node("tmdb", tmdb_agent_node)
         self.workflow.add_node("firecrawl", firecrawl_agent_node)
         self.workflow.add_node("news_insight", news_insight_node)
+        self.workflow.add_node("trends", trends_agent_node)
         
-        print("DEBUG: Initializing SentimentNode...", flush=True)
-        # Initialize logic class for sentiment which needs __init__
+        # Initialize class-based nodes
         sentiment_processor = SentimentNode()
         self.workflow.add_node("sentiment", sentiment_processor)
-        print("DEBUG: SentimentNode initialized", flush=True)
-        
-        # Add visualization node
         self.workflow.add_node("visualization", visualization_agent_node)
         
-        # Define Edges (Parallel Fetching -> Sentiment Analysis)
-        self.workflow.set_entry_point("reddit") # Start with one, but we want parallel. 
-        # Actually LangGraph entry point is single. We can use a "fan out" pattern or just valid START->all.
-        # But 'set_entry_point' takes one node. 
-        # To run parallel, we usually use a 'start' node that does nothing or start with one and use parallel branches?
-        # Better: set_entry_point to a dummy node or allow standard fan-out.
-        # In this version of LangGraph, we can just set edges from START.
+        # --- Define Edges ---
         
-        self.workflow.set_entry_point("reddit") 
-        # Wait, if I want parallel, I should probably put them in a map or use a Supervisor.
-        # For simplicity in this iteration: I will chain them or use the map capabilities if available.
-        # But wait, 'set_entry_point' implies sequential start?
-        # Actually, let's use a simple sequential chain first to guarantee stability, or use a "router".
-        # Or, simpler: Just define edges.
-        # Using a specialized "fetch_all" map is better, but let's stick to a robust graph:
-        # User request: "agents will now make only fetching... then computing".
-        # Let's fan-out from a specialized start node if possible.
-        # LangGraph allows START -> Node.
+        # 1. Start all fetchers in PARALLEL
+        # This satisfies the requirement for efficiency and resilience.
+        # If one fails (returns error/empty), others continue.
+        self.workflow.add_edge(START, "reddit")
+        self.workflow.add_edge(START, "youtube")
+        self.workflow.add_edge(START, "wiki")
+        self.workflow.add_edge(START, "imdb")
+        self.workflow.add_edge(START, "tmdb")
+        self.workflow.add_edge(START, "firecrawl")
+        self.workflow.add_edge(START, "trends")
         
-        # We'll try to run them in parallel branches if possible, but sequential is safer for now without 'Parallel' construct handy.
-        # Let's run: Reddit -> YouTube -> Wiki -> IMDB -> Sentiment.
-        # It's slower but simple.
+        # 2. Connect Signal Producers to Sentiment Analysis
+        # Note: In LangGraph, if multiple nodes point to 'sentiment', it may trigger multiple times
+        # or merge state depending on execution. State aggregation handles the 'signals' list safely.
+        self.workflow.add_edge("reddit", "sentiment")
+        self.workflow.add_edge("youtube", "sentiment")
+        self.workflow.add_edge("wiki", "sentiment")
+        self.workflow.add_edge("imdb", "sentiment")
         
-        # Sequential workflow: Reddit → YouTube → Wiki → IMDB → TMDB → Firecrawl → News Insight → Sentiment → Visualization → END
-        self.workflow.add_edge("reddit", "youtube")
-        self.workflow.add_edge("youtube", "wiki")
-        self.workflow.add_edge("wiki", "imdb")
-        self.workflow.add_edge("imdb", "tmdb")
-        self.workflow.add_edge("tmdb", "firecrawl")
+        # 3. Connect News Data Flow
         self.workflow.add_edge("firecrawl", "news_insight")
-        self.workflow.add_edge("news_insight", "sentiment")
+        # News insight saves to DB directly, but we can connect to visualization
+        self.workflow.add_edge("news_insight", "visualization")
+        
+        # 4. Connect Meta/Trends to Visualization
+        self.workflow.add_edge("tmdb", "visualization")
+        self.workflow.add_edge("trends", "visualization")
+        
+        # 5. Connect Sentiment to Visualization
         self.workflow.add_edge("sentiment", "visualization")
+        
+        # 6. End
         self.workflow.add_edge("visualization", END)
         
         self.app = self.workflow.compile()
+        print("DEBUG: AgentOrchestrator Graph Compiled", flush=True)
 
     def process_movie(self, movie_id: str, movie_title: str):
         """
@@ -97,17 +98,21 @@ class AgentOrchestrator:
         }
         
         try:
+            # Invoke the graph
+            # This will run the parallel workflow
             result = self.app.invoke(initial_state)
             
-            # Since sentiment node does the saving, we just log completion
             errs = result.get("errors", [])
             if errs:
-                logger.warning(f"⚠️ Completed with errors: {errs}")
+                logger.warning(f"⚠️ Pipeline finished with some errors: {errs}")
             else:
                 logger.info("✅ Pipeline Completed Successfully.")
                 
+            return result
+                
         except Exception as e:
-            logger.error(f"❌ Pipeline Failed: {e}")
+            logger.error(f"❌ Pipeline Critical Failure: {e}")
+            raise e
 
 if __name__ == "__main__":
     import backend.config # Ensure env vars loaded

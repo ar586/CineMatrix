@@ -39,6 +39,7 @@ export interface Movie {
     };
     imdb?: {
         rating?: number;
+        votes?: number;
     };
     rotten_tomatoes?: {
         critics_score?: number;
@@ -54,6 +55,17 @@ export interface Movie {
     };
     box_office?: string;
     awards?: string;
+    // IMDB flat fields (for backward compatibility)
+    year?: string;
+    rated?: string;
+    runtime?: string;
+    genre?: string | string[];
+    director?: string;
+    actors?: string | string[];
+    plot?: string;
+    poster?: string;
+    imdb_rating?: number;
+    imdb_votes?: number;
     daily_sentiment_summary: {
         score: number;
         volume: number | { reddit_posts: number; youtube_videos: number };
@@ -128,6 +140,43 @@ export interface RedditPost {
     num_comments: number;
     created_at: string;
     comments: RedditComment[];
+    sentiment?: {
+        score: number;
+        label: string;
+        confidence: number;
+    };
+}
+
+export interface YouTubeComment {
+    comment_id: string;
+    text: string;
+    likes: number;
+    created_at: string;
+}
+
+export interface YouTubeVideo {
+    id?: string;
+    video_id: string;
+    video_type: string;
+    title: string;
+    channel: string;
+    channel_id?: string;
+    channel_image?: string;
+    channel_subs?: string;
+    url: string;
+    transcript?: string;
+    published_at: string;
+    stats?: {
+        views: number;
+        likes: number;
+        comment_count: number;
+    };
+    comments: YouTubeComment[];
+    sentiment?: {
+        score: number;
+        label: string;
+        confidence: number;
+    };
 }
 
 export const api = {
@@ -157,6 +206,10 @@ export const api = {
     },
     getRedditPosts: async (movieId: string) => {
         const response = await axios.get<RedditPost[]>(`${API_BASE}/movies/${movieId}/reddit`);
+        return response.data;
+    },
+    getMovieYoutubeVideos: async (movieId: string) => {
+        const response = await axios.get<YouTubeVideo[]>(`${API_BASE}/movies/${movieId}/youtube`);
         return response.data;
     }
 };

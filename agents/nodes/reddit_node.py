@@ -20,6 +20,7 @@ def reddit_agent_node(state: AgentState):
     """
     from backend.database.client import MongoDBClient
     from backend.database.dedup import bulk_upsert_reddit_posts
+    from backend.database.similarity import find_similar_reddit_post
     
     movie_title = state["movie_title"]
     movie_id = state["movie_id"]
@@ -27,7 +28,7 @@ def reddit_agent_node(state: AgentState):
 
     # 1. Initialize LLM
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model=config.LLM_MODEL,
         google_api_key=config.GEMINI_API_KEY,
         temperature=0.7
     )
@@ -75,35 +76,30 @@ def reddit_agent_node(state: AgentState):
         
     logger.info(f"   Fetched {len(raw_posts)} raw posts. Filtering...")
 
-    # 4. Filter for Relevance (LLM)
-    # create a simplified list for the LLM to review
-    candidates = []
+    # 4. Filter for Relevance using Intelligent Validator
+    from agents.validator import ContentValidator
+    validator = ContentValidator()
+    
+    selected_indices = []
+    
+    # We validate each post briefly
     for i, post in enumerate(raw_posts):
-        candidates.append(f"INDEX {i}: Title: {post.title} | Subreddit: {post.subreddit.display_name} | Content Preview: {post.selftext[:200]}...")
-    
-    candidates_str = "\n".join(candidates)
-    
-    filter_prompt = f"""
-    You are a Content Curator. Select the most relevant and substantial Reddit discussions about "{movie_title}" from the list below.
-    Ignore low-effort posts, memes, or unrelated topics.
-    Select up to 5 best posts.
-    
-    CANDIDATES:
-    {candidates_str}
-    
-    Output strictly a JSON list of integer INDICES. Example: [0, 2, 5]
-    """
-    
-    selected_indices = list(range(min(5, len(raw_posts))))
-    # try:
-    #     response = llm.invoke([HumanMessage(content=filter_prompt)])
-    #     text = response.content.replace("```json", "").replace("```", "").strip()
-    #     selected_indices = json.loads(text)
-    #     logger.info(f"   Selected indices: {selected_indices}")
-    # except Exception as e:
-    #     logger.error(f"   Filtering failed: {e}")
-    #     # Fallback: take top 3
-    #     selected_indices = list(range(min(3, len(raw_posts))))
+        # Construct a representative snippet
+        content = f"Title: {post.title}\nSubreddit: {post.subreddit.display_name}\nContent: {post.selftext[:500]}"
+        
+        if validator.validate(content, movie_title, "reddit_post"):
+            selected_indices.append(i)
+        
+        # Stop if we have enough
+        if len(selected_indices) >= 5:
+            break
+            
+    if not selected_indices:
+        # Fallback if strict validation fails for all (should be rare for 'relevant' search)
+        # We might take top 2 just in case, or return empty.
+        # Let's trust the validator for now but log warning.
+        logger.warning("   All Reddit posts failed intelligent validation.")
+        return {"signals": []}
 
     # 5. Format Signals
     signals: List[SourceSentiment] = []
@@ -123,6 +119,32 @@ def reddit_agent_node(state: AgentState):
             }
             signals.append(signal)
             
+            # Fetch top comments from the post
+            comments = []
+            try:
+                # Replace "MoreComments" objects to get actual comments
+                post.comments.replace_more(limit=0)
+                
+                # Get all top-level comments and sort by score
+                top_comments = sorted(
+                    post.comments.list(),
+                    key=lambda c: c.score if hasattr(c, 'score') else 0,
+                    reverse=True
+                )[:5]  # Get top 5 comments
+                
+                for comment in top_comments:
+                    if hasattr(comment, 'body') and hasattr(comment, 'score'):
+                        comments.append({
+                            "comment_id": comment.id,
+                            "text": comment.body,
+                            "score": comment.score,
+                            "created_at": datetime.fromtimestamp(comment.created_utc, timezone.utc)
+                        })
+                
+                logger.info(f"   Fetched {len(comments)} comments for post {post.id}")
+            except Exception as e:
+                logger.warning(f"   Failed to fetch comments for post {post.id}: {e}")
+            
             # Create formatted post object for DB
             reddit_post_doc = {
                 "movie_id": movie_id,
@@ -134,12 +156,19 @@ def reddit_agent_node(state: AgentState):
                 "score": post.score,
                 "num_comments": post.num_comments,
                 "created_at": datetime.fromtimestamp(post.created_utc, timezone.utc),
-                "comments": [] # We could extract comments here if we wanted deeper analysis
+                "comments": comments  # Now populated with actual comments
             }
             
-            # Using bulk upsert from dedicated function
+            # Deduplication Check
             db_client = MongoDBClient()
             db = db_client.get_db()
+            
+            similar_post_id = find_similar_reddit_post(db, movie_id, post.title)
+            if similar_post_id and similar_post_id != post.id:
+                logger.info(f"   ⏭️  Skipping similar Reddit post: {post.title[:50]}... (Matched {similar_post_id})")
+                continue
+
+            # Using bulk upsert from dedicated function
             bulk_upsert_reddit_posts(db, [reddit_post_doc])
             
             logger.info(f"   ✅ Saved Reddit post {post.id} to DB")

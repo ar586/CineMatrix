@@ -1,55 +1,83 @@
 
 import pandas as pd
+from datetime import datetime
 
 class TrendsParser:
-    def parse_interest_over_time(self, df):
+    def parse_interest_over_time(self, trends_data):
         """
-        Convert interest_over_time DataFrame to list of dicts.
-        Structure: [{'date': 'YYYY-MM-DD', 'value': 100}, ...]
+        Extract interest_over_time from SerpApi response.
         """
-        if df is None or df.empty:
+        results = []
+        
+        # SerpApi structure: "interest_over_time": {"timeline_data": [...]}
+        interest_section = trends_data.get("interest_over_time", {})
+        timeline_data = interest_section.get("timeline_data", [])
+        
+        if not timeline_data:
             return []
 
-        results = []
-        # The dataframe index is the date. Columns are keywords.
-        # We assume single keyword queries for now, or we take the first column.
-        
-        # Reset index to access date column easily
-        df_reset = df.reset_index()
-        
-        for _, row in df_reset.iterrows():
-            date_str = row['date'].strftime('%Y-%m-%d')
-            # Extract values for all keywords
-            # Filter out 'isPartial' column
-            for col in df.columns:
-                if col == 'isPartial':
-                    continue
+        for item in timeline_data:
+            # item example: {'date': 'Nov 1, 2024', 'timestamp': '1730419200', 'values': [{'query': 'Inception', 'value': '75', 'extracted_value': 75}]}
+            
+            # SerpApi date format might vary, but they often provide a 'date' string or timestamp.
+            # Let's try to use the timestamp if available for accuracy, or parse the date string.
+            
+            date_str = item.get("date")
+            timestamp = item.get("timestamp")
+            
+            # Format date as YYYY-MM-DD
+            if timestamp:
+                dt = datetime.fromtimestamp(int(timestamp))
+                formatted_date = dt.strftime('%Y-%m-%d')
+            else:
+                # Fallback parsing if needed, but timestamp is usually there
+                formatted_date = date_str 
+            
+            values = item.get("values", [])
+            for val in values:
                 results.append({
-                    "date": date_str,
-                    "keyword": col,
-                    "value": int(row[col])
+                    "date": formatted_date,
+                    "keyword": val.get("query"),
+                    "value": val.get("extracted_value")
                 })
-        
+                
         return results
 
-    def parse_related_queries(self, queries_dict):
+    def parse_related_queries(self, trends_data):
         """
-        Convert related_queries dictionary to a simplified structure.
+        Extract related_queries from SerpApi response.
         """
-        if not queries_dict:
-            return {}
-
         parsed = {}
-        for keyword, data in queries_dict.items():
-            parsed[keyword] = {
+        
+        # SerpApi structure: "related_queries": {"query_key": {"top": [...], "rising": [...]}}
+        # But wait, SerpApi usually keys by the query directly or provides a list.
+        # Let's check typical response.
+        # It's often "related_queries": { "query_1": { "top": [...], "rising": [...] } }
+        
+        related_section = trends_data.get("related_queries", {})
+        
+        for key, data in related_section.items():
+            parsed[key] = {
                 "top": [],
                 "rising": []
             }
             
-            if data['top'] is not None:
-                parsed[keyword]['top'] = data['top'].to_dict(orient='records')
+            top_queries = data.get("top", [])
+            rising_queries = data.get("rising", [])
+            
+            if top_queries:
+                # Transform to list of dicts: {'query': 'foo', 'value': '100'}
+                # SerpApi 'top' items: {'query': 'inception cast', 'value': '100', 'extracted_value': 100}
+                parsed[key]['top'] = [
+                    {"query": q.get("query"), "value": q.get("extracted_value")}
+                    for q in top_queries
+                ]
                 
-            if data['rising'] is not None:
-                parsed[keyword]['rising'] = data['rising'].to_dict(orient='records')
+            if rising_queries:
+                # SerpApi 'rising' items: {'query': '...', 'value': 'Breakout'}
+                parsed[key]['rising'] = [
+                    {"query": q.get("query"), "value": q.get("value")}
+                    for q in rising_queries
+                ]
                 
         return parsed

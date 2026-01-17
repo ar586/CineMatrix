@@ -174,4 +174,37 @@ def batch_check_similarity(
                 break
         results.append(is_duplicate)
     
-    return results
+
+def find_similar_insight(db, movie_id: str, title: str, summary: str, threshold: float = 0.85) -> Optional[str]:
+    """
+    Check if a similar insight already exists for this movie.
+    Compares both title and summary.
+    
+    Args:
+        db: MongoDB database instance
+        movie_id: Movie ID to search within
+        title: Insight title to compare
+        summary: Insight summary to compare
+        threshold: Similarity threshold (0.0-1.0), default 0.85
+        
+    Returns:
+        insight_id of similar insight if found, None otherwise
+    """
+    existing_insights = db.insights.find(
+        {"movie_id": movie_id},
+        {"title": 1, "summary": 1}
+    ).sort("generated_at", -1).limit(50) # Check 50 most recent
+    
+    for insight in existing_insights:
+        # Check title similarity
+        title_sim = text_similarity(title, insight.get("title", ""))
+        if title_sim >= threshold:
+            return str(insight["_id"])
+            
+        # Check summary similarity
+        summary_sim = text_similarity(summary, insight.get("summary", ""))
+        if summary_sim >= threshold:
+            return str(insight["_id"])
+    
+    return None
+

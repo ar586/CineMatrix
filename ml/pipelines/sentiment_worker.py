@@ -22,19 +22,29 @@ class SentimentWorker:
             print(f"Skipping empty text for item in {source_type}")
             return
 
-        # 2. Analyze
+        # 2. Extract Metadata & Analyze
+        metadata = {}
+        source_ref = {}
+        
+        if source_type == "reddit":
+            source_ref = {"post_id": item.get("post_id") or item.get("id")}
+            metadata = {
+                "sub_source": "post" if "title" in item else "comment",
+                "upvotes": item.get("score", 0),
+                "num_comments": item.get("num_comments", 0)
+            }
+        elif source_type == "youtube":
+            source_ref = {"video_id": item.get("video_id") or item.get("id")}
+            if "stats" in item:
+                 metadata = item["stats"]
+            elif "likes" in item:
+                 metadata = {"likes": item["likes"], "sub_source": "comment"}
+
         print(f"Analyzing text length: {len(text)}")
-        output = self.engine.analyze(text)
+        # Pass source and metadata to engine for context-aware analysis
+        output = self.engine.analyze(text, source=source_type, metadata=metadata)
 
         # 3. Construct DB Object
-        # Extract ID specific to source
-        source_ref = {}
-        if source_type == "reddit":
-            source_ref = {"post_id": item.get("id")}
-        elif source_type == "youtube":
-            source_ref = {"video_id": item.get("id")}
-
-        # Create Pydantic model
         sentiment_analysis = SentimentAnalysis(
             movie_id=movie_id,
             source=source_type,
@@ -45,11 +55,7 @@ class SentimentWorker:
                 "confidence": output.confidence
             },
             aspects=output.aspects,
-            engagement_weight=item.get("engagement", {}), # passed pre-formatted or extract here?
-            # Assuming item has engagement dict or we parse it. 
-            # For simplicity let's assume ingestion layer passes it or we extract.
-            # DiscussionBuilder doesn't extract structure, just text.
-            # Let's extract basic engagement here or expect it in item.
+            engagement_weight=metadata if metadata else None,
             model={
                 "name": "roberta-deberta-ensemble",
                 "version": "1.0",
@@ -58,10 +64,15 @@ class SentimentWorker:
             processed_at=datetime.utcnow()
         )
 
-        # 4. Save
+        # 4. Save (Deduplicated)
         db = self.db_client.get_db()
         try:
-            db.source_sentiments.insert_one(sentiment_analysis.model_dump(by_alias=True))
+            from backend.database.dedup import bulk_upsert_sentiments
+            
+            # Convert to dict and ensure _id is handled by dedup logic
+            doc = sentiment_analysis.model_dump(by_alias=True)
+            
+            bulk_upsert_sentiments(db, [doc])
             print(f"Saved sentiment for {source_type} {source_ref}")
         except Exception as e:
             print(f"Error saving to DB: {e}")

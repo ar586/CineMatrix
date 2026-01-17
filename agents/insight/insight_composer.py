@@ -8,6 +8,7 @@ from backend.database.models import (
     Insight, Evidence, RecommendedVisual, GeneratorInfo, RelatedEvent
 )
 from backend.llm.client import LLMService
+from backend.database.similarity import find_similar_insight
 
 class InsightComposer:
     def __init__(self):
@@ -93,12 +94,19 @@ class InsightComposer:
                 generated_at=datetime.utcnow()
             )
             
-            insights.append(insight)
-            
+            # Deduplication Check (before storing)
+            existing_id = find_similar_insight(db, movie_id, title, summary)
+            if existing_id:
+                print(f"Skipping duplicate insight: {title} (Matched {existing_id})")
+                continue
+                
             # Store
             try:
-                collection.insert_one(insight.model_dump(by_alias=True))
+                # Exclude None values to prevent _id: null error
+                insight_dict = insight.model_dump(by_alias=True, exclude_none=True)
+                collection.insert_one(insight_dict)
                 print(f"Stored insight: {title}")
+                insights.append(insight)
             except Exception as e:
                 print(f"Error storing insight: {e}")
 

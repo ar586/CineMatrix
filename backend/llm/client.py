@@ -22,7 +22,7 @@ class LLMService:
             return
 
         genai.configure(api_key=self.api_key)
-        self.model_name = getattr(config, "LLM_MODEL", "gemini-1.5-pro-latest")
+        self.model_name = getattr(config, "LLM_MODEL", "models/gemma-3-27b-it")
         
         try:
             self.model = genai.GenerativeModel(self.model_name)

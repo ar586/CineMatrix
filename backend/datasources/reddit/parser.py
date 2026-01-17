@@ -9,6 +9,7 @@ class RedditParser:
         results = []
         for sub in submissions:
             results.append({
+                "post_id": sub.id,
                 "title": sub.title,
                 "score": sub.score,
                 "url": sub.url,
@@ -16,7 +17,8 @@ class RedditParser:
                 "created_utc": sub.created_utc,
                 "created_date": datetime.utcfromtimestamp(sub.created_utc).strftime('%Y-%m-%d'),
                 "permalink": f"https://www.reddit.com{sub.permalink}",
-                "subreddit": sub.subreddit.display_name
+                "subreddit": sub.subreddit.display_name,
+                "comments": self.parse_comments(sub, limit=5)
             })
         return results
 
@@ -28,7 +30,8 @@ class RedditParser:
         submission.comments.replace_more(limit=0) # Flatten tree, resolve MoreComments
         for comment in submission.comments.list()[:limit]:
             comments.append({
-                "body": comment.body,
+                "comment_id": comment.id,
+                "text": comment.body,
                 "score": comment.score,
                 "author": str(comment.author) if comment.author else "[deleted]"
             })

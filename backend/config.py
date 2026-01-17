@@ -27,15 +27,8 @@ XAI_API_KEY = os.getenv("XAI_API_KEY")
 
 # Google Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-LLM_MODEL = "models/gemma-3-27b-it" 
-# Note: "google/gemma-3-27b-it" is a HuggingFace model ID, typically for local run or via specific API.
-# If user provided a Gemini API Key (starts with AIza), they likely want to use the Gemini API models (gemini-pro, gemini-1.5-flash).
-# "gemma-3-27b-it" isn't a standard model ID in the Gemini API (vertex might support it).
-# I will stick to "gemini-1.5-flash" as a safe default for the API key provided, or "gemini-2.0-flash-exp" 
-# User asked for "google/gemma-3-27b-it" - this is strange with an AIza key.
-# I will use "gemini-1.5-pro" as a robust default for "Reasoning" tasks if the specific model ID fails,
-# but I will try to respect the user's intent or map it.
-# Actually, let's just set the variable, we can handle the mapping in the client.
+LLM_MODEL = "models/gemma-3-27b-it"
+# Using Gemma 3 27B model
 LLM_MODEL_NAME = "models/gemma-3-27b-it"
 
 # IMDB

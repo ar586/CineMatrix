@@ -43,6 +43,7 @@ pyparsing==3.3.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 pytrends==4.9.2
+google-search-results
 pytz==2025.2
 requests==2.32.5
 rsa==4.9.1
@@ -66,3 +67,8 @@ scipy
 google-generativeai
 fastapi
 uvicorn
+youtube-transcript-api
+langgraph
+langchain-google-genai
+langchain-core
+langchain

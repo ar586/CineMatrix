@@ -23,6 +23,8 @@ class DiscussionBuilder:
         elif source_type == "youtube":
             text_parts.append(item.get("title", ""))
             text_parts.append(item.get("description", ""))
+            if item.get("transcript"):
+                 text_parts.append(item.get("transcript"))
             if "comments" in item:
                 comments = item["comments"]
                 if isinstance(comments, list):

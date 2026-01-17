@@ -53,7 +53,11 @@ class SentimentNode:
         for signal in signals:
             try:
                 # Analyze text
-                res = self.engine.analyze(signal["text"])
+                res = self.engine.analyze(
+                    text=signal["text"],
+                    source=signal.get("source", "unknown"),
+                    metadata=signal.get("metadata", {})
+                )
                 
                 # Format for DB (Schema: SentimentAnalysis)
                 sentiment_doc = {
