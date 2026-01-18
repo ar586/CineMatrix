@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 interface ChartRendererProps {
@@ -153,7 +154,7 @@ export function ChartRenderer({ chartType, title, description }: ChartRendererPr
                                 </div>
                             ))}
                             {days.map(day => (
-                                <>
+                                <Fragment key={day}>
                                     <div key={`label-${day}`} style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', color: '#999' }}>
                                         {day}
                                     </div>
@@ -184,7 +185,7 @@ export function ChartRenderer({ chartType, title, description }: ChartRendererPr
                                             </div>
                                         );
                                     })}
-                                </>
+                                </Fragment>
                             ))}
                         </div>
                         <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#999' }}>

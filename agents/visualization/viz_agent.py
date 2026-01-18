@@ -18,8 +18,14 @@ class VisualizationAgent:
     
     def __init__(self, db=None, db_client=None, llm_service=None):
         self.db = db
-        self.db_client = db_client or MongoDBClient()
+        self._db_client = db_client
         self.llm = llm_service or LLMService()
+
+    @property
+    def db_client(self):
+        if not self._db_client and not self.db:
+            self._db_client = MongoDBClient()
+        return self._db_client
     
     def aggregate_context(self, movie_id: str) -> Dict:
         """

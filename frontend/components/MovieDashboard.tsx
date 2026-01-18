@@ -83,118 +83,42 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
 
             {/* CONTENT */}
             {activeTab === 'overview' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-                    <div className="left-col">
-                        {/* Metadata Card */}
-                        {movie && (
-                            <div className="card" style={{ marginBottom: '2rem' }}>
-                                <h3 style={{ marginTop: 0 }}>Movie Details</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem', color: '#ccc' }}>
-                                    <div>
-                                        <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#666' }}>Director:</strong> {movie.crew?.director || 'N/A'}</p>
-                                        <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#666' }}>Writers:</strong> {movie.crew?.writers?.join(', ') || 'N/A'}</p>
-                                        <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#666' }}>Genres:</strong> {movie.genres?.join(', ') || 'N/A'}</p>
-                                        <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#666' }}>Box Office:</strong> {movie.box_office || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#666' }}>Cast:</strong> {movie.cast?.slice(0, 5).join(', ') || 'N/A'}</p>
-                                        <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#666' }}>IMDB:</strong> ⭐ {movie.imdb?.rating || 'N/A'}</p>
-                                        {movie.rotten_tomatoes?.critics_score && (
-                                            <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#666' }}>Rotten Tomatoes:</strong> 🍅 {movie.rotten_tomatoes.critics_score}%</p>
-                                        )}
-                                        {movie.metascore && (
-                                            <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#666' }}>Metascore:</strong> {movie.metascore}/100</p>
-                                        )}
-                                    </div>
-                                </div>
-                                {movie.awards && movie.awards !== 'N/A' && (
-                                    <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#999', borderTop: '1px solid #333', paddingTop: '0.5rem' }}>
-                                        <strong style={{ color: '#666' }}>🏆 Awards:</strong> {movie.awards}
-                                    </p>
-                                )}
-                            </div>
-                        )}
+                <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
 
-                        {/* Dynamic Visualizations */}
-                        {movie && (
-                            <div style={{ marginBottom: '2rem' }}>
-                                <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>📊 Dynamic Insights</h3>
-                                <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-                                    AI-generated visualizations analyzing sentiment trends, platform activity, and audience engagement.
+                    {/* Movie Details Card */}
+                    {movie && (
+                        <div className="card" style={{ marginBottom: '2rem' }}>
+                            <h3 style={{ marginTop: 0, textAlign: 'center', marginBottom: '1.5rem' }}>Movie Details</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', fontSize: '1rem', color: '#ccc' }}>
+                                <div style={{ textAlign: 'right', paddingRight: '1rem', borderRight: '1px solid #333' }}>
+                                    <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: '#666' }}>Director:</strong> {movie.crew?.director || 'N/A'}</p>
+                                    <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: '#666' }}>Writers:</strong> {movie.crew?.writers?.join(', ') || 'N/A'}</p>
+                                    <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: '#666' }}>Genres:</strong> {movie.genres?.join(', ') || 'N/A'}</p>
+                                    <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: '#666' }}>Box Office:</strong> {movie.box_office || 'N/A'}</p>
+                                </div>
+                                <div>
+                                    <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: '#666' }}>Cast:</strong> {movie.cast?.slice(0, 5).join(', ') || 'N/A'}</p>
+                                    <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: '#666' }}>IMDB:</strong> ⭐ {movie.imdb?.rating || 'N/A'}</p>
+                                    {movie.rotten_tomatoes?.critics_score && (
+                                        <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: '#666' }}>Rotten Tomatoes:</strong> 🍅 {movie.rotten_tomatoes.critics_score}%</p>
+                                    )}
+                                    {movie.metascore && (
+                                        <p style={{ marginBottom: '0.8rem' }}><strong style={{ color: '#666' }}>Metascore:</strong> {movie.metascore}/100</p>
+                                    )}
+                                </div>
+                            </div>
+                            {movie.awards && movie.awards !== 'N/A' && (
+                                <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: '#999', borderTop: '1px solid #333', paddingTop: '1rem', textAlign: 'center' }}>
+                                    <strong style={{ color: '#666' }}>🏆 Awards:</strong> {movie.awards}
                                 </p>
-                                <InfiniteVisualizationFeed movieId={movie._id || movie.movie_id || ''} />
-                            </div>
-                        )}
-
-                        {/* Trailers Section */}
-                        {movie && movie.trailers && movie.trailers.length > 0 && (
-                            <div style={{ marginBottom: '2rem' }}>
-                                <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>🎥 Trailers & Videos</h3>
-                                <div style={{ display: 'grid', gap: '1rem' }}>
-                                    {movie.trailers.slice(0, 3).map((trailer: any, index: number) => (
-                                        <div key={index} className="card">
-                                            <div style={{ marginBottom: '0.75rem' }}>
-                                                <h4 style={{ margin: 0, fontSize: '1rem', marginBottom: '0.25rem' }}>
-                                                    {trailer.name}
-                                                </h4>
-                                                <span style={{
-                                                    background: trailer.type === 'Trailer' ? '#646cff' : '#00ff9d',
-                                                    color: '#000',
-                                                    padding: '0.2rem 0.5rem',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: 600,
-                                                    textTransform: 'uppercase'
-                                                }}>
-                                                    {trailer.type}
-                                                </span>
-                                            </div>
-                                            <div style={{
-                                                position: 'relative',
-                                                paddingBottom: '56.25%',
-                                                height: 0,
-                                                overflow: 'hidden',
-                                                borderRadius: '8px',
-                                                background: '#000'
-                                            }}>
-                                                <iframe
-                                                    src={`https://www.youtube.com/embed/${trailer.key}`}
-                                                    title={trailer.name}
-                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                    allowFullScreen
-                                                    style={{
-                                                        position: 'absolute',
-                                                        top: 0,
-                                                        left: 0,
-                                                        width: '100%',
-                                                        height: '100%',
-                                                        border: 'none'
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="card" style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ marginTop: 0 }}>Sentiment Trend</h3>
-                            <SentimentChart data={dailyData} />
+                            )}
                         </div>
+                    )}
 
-                        <div className="card">
-                            <h3 style={{ marginTop: 0 }}>AI Insight Feed</h3>
-                            {insights.map(insight => (
-                                <InsightCard key={insight._id} insight={insight} />
-                            ))}
-                            {insights.length === 0 && <p style={{ color: '#666' }}>No insights generated yet.</p>}
-                        </div>
-                    </div>
-
-                    <div className="right-col">
-                        <div className="card" style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ marginTop: 0 }}>Aspect Analysis</h3>
+                    {/* Aspect Analysis (Moved to Top) */}
+                    <div className="card" style={{ marginBottom: '1rem' }}>
+                        <h3 style={{ marginTop: 0, textAlign: 'center' }}>Aspect Analysis</h3>
+                        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
                             {Object.keys(currentAspects).length > 0 ? (
                                 <AspectRadar aspects={currentAspects} />
                             ) : (
@@ -202,6 +126,88 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                                     Not enough data
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    {/* Dynamic Visualizations */}
+                    {movie && (
+                        <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                            <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>📊 Dynamic Insights</h3>
+                            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem', maxWidth: '600px' }}>
+                                AI-generated visualizations analyzing sentiment trends, platform activity, and audience engagement.
+                            </p>
+                            <InfiniteVisualizationFeed movieId={movie._id || movie.movie_id || ''} />
+                        </div>
+                    )}
+
+                    {/* Trailers Section */}
+                    {movie && movie.trailers && movie.trailers.length > 0 && (
+                        <div style={{ marginBottom: '1rem' }}>
+                            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.2rem', textAlign: 'center' }}>🎥 Trailers & Videos</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                                {movie.trailers.slice(0, 3).map((trailer: any, index: number) => (
+                                    <div key={index} className="card">
+                                        <div style={{ marginBottom: '0.75rem' }}>
+                                            <h4 style={{ margin: 0, fontSize: '1rem', marginBottom: '0.25rem' }}>
+                                                {trailer.name}
+                                            </h4>
+                                            <span style={{
+                                                background: trailer.type === 'Trailer' ? '#646cff' : '#00ff9d',
+                                                color: '#000',
+                                                padding: '0.2rem 0.5rem',
+                                                borderRadius: '6px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 600,
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                {trailer.type}
+                                            </span>
+                                        </div>
+                                        <div style={{
+                                            position: 'relative',
+                                            paddingBottom: '56.25%',
+                                            height: 0,
+                                            overflow: 'hidden',
+                                            borderRadius: '8px',
+                                            background: '#000'
+                                        }}>
+                                            <iframe
+                                                src={`https://www.youtube.com/embed/${trailer.key}`}
+                                                title={trailer.name}
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    border: 'none'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+
+
+                    {/* Sentiment Trend */}
+                    <div className="card" style={{ marginBottom: '1rem' }}>
+                        <h3 style={{ marginTop: 0, textAlign: 'center' }}>Sentiment Trend</h3>
+                        <SentimentChart data={dailyData} />
+                    </div>
+
+                    {/* AI Insight Feed */}
+                    <div className="card">
+                        <h3 style={{ marginTop: 0, textAlign: 'center', marginBottom: '1.5rem' }}>AI Insight Feed</h3>
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            {insights.map(insight => (
+                                <InsightCard key={insight._id} insight={insight} />
+                            ))}
+                            {insights.length === 0 && <p style={{ color: '#666', textAlign: 'center' }}>No insights generated yet.</p>}
                         </div>
                     </div>
                 </div>

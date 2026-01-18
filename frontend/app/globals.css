@@ -32,8 +32,6 @@
 
 body {
   margin: 0;
-  display: flex;
-  justify-content: center;
   min-width: 320px;
   min-height: 100vh;
   background: var(--bg-main);
@@ -42,7 +40,7 @@ body {
 /* Next.js root container */
 body>div {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -50,7 +48,7 @@ body>div {
 /* Legacy Vite/React root */
 #root {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
 }
