@@ -244,18 +244,21 @@ Generate {limit} creative visualizations for page {page}. For each:
 Return JSON array with format:
 [{{
   "id": "unique_id",
-  "type": "statistic|chart",
+  "type": "statistic|chart|text_card",
   "priority": 1-10,
   "component": {{
     "chart_type": "line|bar|radar|heatmap|pie",
     "title": "Engaging Title",
+    "content": "Narrative or key takeaway for text_card type",
     "description": "Context about what this shows",
     "data_query": "Description of what data to fetch",
-    "styling": {{"color_scheme": "sentiment-based|vibrant|monochrome"}}
+    "styling": {{"color_scheme": "sentiment-based|vibrant|monochrome", "theme": "alert|info|highlight|default"}}
   }}
 }}]
 
-Be creative! Consider: sentiment journeys, platform comparisons, aspect radars, volume heatmaps, trend indicators."""
+Be creative! Mix charts with narrative text cards. 
+For every 2-3 charts, include a 'text_card' that synthesizes a key insight or interesting trend in 2-3 sentences.
+Consider: sentiment journeys, platform comparisons, aspect radars, volume heatmaps."""
 
         try:
             result = self.llm.generate_json(prompt)

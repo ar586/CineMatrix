@@ -83,7 +83,14 @@ export function InfiniteVisualizationFeed({ movieId }: Props) {
     }, [movieId]);
 
     return (
-        <div style={{ display: 'grid', gap: '1.5rem' }}>
+        <div style={{
+            background: '#121212', // Slightly darker than card for the "page" background
+            borderRadius: '16px',
+            border: '1px solid #333',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
             {visualizations.map((viz, index) => (
                 <VisualizationCard key={`${viz.id}-${index}`} visualization={viz} />
             ))}
@@ -124,19 +131,19 @@ function VisualizationCard({ visualization }: { visualization: Visualization }) 
 
             return (
                 <div style={{
-                    background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+                    background: 'linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, rgba(100, 108, 255, 0.05) 100%)',
                     borderRadius: '8px',
                     padding: '1.5rem',
                     borderLeft: `4px solid ${color}`,
-                    minHeight: '200px',
+                    marginTop: '1rem',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center'
                 }}>
-                    <h4 style={{ margin: '0 0 1rem', fontSize: '1.2rem', color: '#fff' }}>
+                    <h4 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', color: '#fff' }}>
                         {component.title}
                     </h4>
-                    <p style={{ fontSize: '1rem', lineHeight: '1.6', color: '#ccc', marginBottom: '1rem' }}>
+                    <p style={{ fontSize: '1rem', lineHeight: '1.6', color: '#ddd', marginBottom: '0.5rem' }}>
                         {component.content || component.description}
                     </p>
                     {component.source && (
@@ -159,7 +166,12 @@ function VisualizationCard({ visualization }: { visualization: Visualization }) 
     };
 
     return (
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div style={{
+            padding: '1.5rem',
+            borderBottom: '1px solid #2a2a2a',
+            background: type === 'text_card' ? '#161618' : 'transparent',
+            transition: 'background 0.3s ease'
+        }}>
             <div style={{ display: 'flex', alignItems: 'start', gap: '1rem', marginBottom: '1rem' }}>
                 <div style={{ flex: 1 }}>
                     <h3 style={{ margin: 0, fontSize: '1.1rem', marginBottom: '0.5rem' }}>
@@ -186,18 +198,7 @@ function VisualizationCard({ visualization }: { visualization: Visualization }) 
 
             {renderContent()}
 
-            {component.data_query && type !== 'text_card' && (
-                <div style={{
-                    marginTop: '1rem',
-                    padding: '0.75rem',
-                    background: '#18181b',
-                    borderRadius: '6px',
-                    fontSize: '0.8rem',
-                    color: '#888'
-                }}>
-                    <strong style={{ color: '#999' }}>Data Query:</strong> {component.data_query}
-                </div>
-            )}
+
         </div>
     );
 }

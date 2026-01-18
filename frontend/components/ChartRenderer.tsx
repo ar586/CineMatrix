@@ -93,7 +93,7 @@ export function ChartRenderer({ chartType, title, description }: ChartRendererPr
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                                 outerRadius={80}
                                 fill="#8884d8"
                                 dataKey="value"
@@ -124,7 +124,7 @@ export function ChartRenderer({ chartType, title, description }: ChartRendererPr
                     </ResponsiveContainer>
                 );
 
-            case 'heatmap':
+            case 'heatmap': {
                 // Custom heatmap implementation
                 const heatmapData = [
                     { day: 'Mon', hour: '00:00', value: 12 },
@@ -195,8 +195,9 @@ export function ChartRenderer({ chartType, title, description }: ChartRendererPr
                         </div>
                     </div>
                 );
+            }
 
-            case 'gauge':
+            case 'gauge': {
                 // Custom gauge/meter implementation
                 const gaugeValue = 0.87; // 87%
                 const gaugeAngle = (gaugeValue * 180) - 90; // -90 to 90 degrees
@@ -274,8 +275,9 @@ export function ChartRenderer({ chartType, title, description }: ChartRendererPr
                         </div>
                     </div>
                 );
+            }
 
-            case 'indicator':
+            case 'indicator': {
                 // Single metric indicator with trend
                 const indicatorValue = 0.88;
                 const previousValue = 0.82;
@@ -351,6 +353,7 @@ export function ChartRenderer({ chartType, title, description }: ChartRendererPr
                         </div>
                     </div>
                 );
+            }
 
             default:
                 return (
