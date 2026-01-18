@@ -93,6 +93,11 @@ def imdb_agent_node(state: AgentState):
             if meta.get("Awards") and meta.get("Awards") != "N/A":
                 update_fields["awards"] = meta.get("Awards")
             
+            # Add Poster if available (OMDB) - CRITICAL FIX
+            # Use 'poster_url' to match schema used by TMDB node
+            if meta.get("Poster") and meta.get("Poster") != "N/A":
+                update_fields["poster_url"] = meta.get("Poster")
+            
             # Remove None/Empty values to avoid overwriting with garbage
             update_fields = {k: v for k, v in update_fields.items() if v is not None}
             

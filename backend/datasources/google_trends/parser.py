@@ -81,3 +81,62 @@ class TrendsParser:
                 ]
                 
         return parsed
+
+    def parse_interest_by_region(self, trends_data):
+        """
+        Extract interest_by_region from SerpApi response.
+        """
+        results = []
+        # SerpApi structure: "interest_by_region": [{"location": "New York", "value": "100", ...}]
+        region_section = trends_data.get("interest_by_region", [])
+        
+        if not region_section:
+            return []
+            
+        for item in region_section:
+            results.append({
+                "location": item.get("location"),
+                "value": item.get("extracted_value")
+            })
+            
+        # Return top 20 regions to avoid bloating data
+        return sorted(results, key=lambda x: x['value'] if x['value'] is not None else 0, reverse=True)[:20]
+
+    def parse_related_topics(self, trends_data):
+        """
+        Extract related_topics from SerpApi response.
+        """
+        parsed = {}
+        # SerpApi structure similar to related_queries
+        topic_section = trends_data.get("related_topics", {})
+        
+        for key, data in topic_section.items():
+            parsed[key] = {
+                "top": [],
+                "rising": []
+            }
+            
+            top_topics = data.get("top", [])
+            rising_topics = data.get("rising", [])
+            
+            if top_topics:
+                parsed[key]['top'] = [
+                    {
+                        "topic": t.get("topic", {}).get("title"),
+                        "type": t.get("topic", {}).get("type"),
+                        "value": t.get("extracted_value")
+                    }
+                    for t in top_topics
+                ]
+                
+            if rising_topics:
+                parsed[key]['rising'] = [
+                    {
+                        "topic": t.get("topic", {}).get("title"),
+                        "type": t.get("topic", {}).get("type"),
+                        "value": t.get("value")
+                    }
+                    for t in rising_topics
+                ]
+        
+        return parsed

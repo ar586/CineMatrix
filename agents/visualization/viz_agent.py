@@ -63,6 +63,9 @@ class VisualizationAgent:
         
         # Get movie metadata
         movie = db.movies.find_one({"_id": movie_id})
+
+        # Get trends data
+        trends = db.google_trends.find_one({"movie_id": movie_id}, sort=[("ingested_at", -1)])
         
         # Calculate aggregated metrics
         context = {
@@ -111,7 +114,8 @@ class VisualizationAgent:
                 }
                 for n in news
             ],
-            "raw_discussions": self._sample_discussions(source_sentiments, limit=5)
+            "raw_discussions": self._sample_discussions(source_sentiments, limit=5),
+            "trends_data": trends or {}
         }
         
         return context
@@ -234,6 +238,8 @@ Total Discussions: {context['sentiment_data']['total_volume']}
 Volatility: {context['sentiment_data']['sentiment_volatility']:.2f}
 Top Aspects: {list(context['aspect_data'].keys())[:3]}
 Platforms: {list(context['platform_breakdown'].keys())}
+Viral Trends: {context.get('trends_data', {}).get('related_queries', {}).get('rising', [])[:3]}
+Top Regions: {context.get('trends_data', {}).get('interest_by_region', [])[:3]}
 
 Generate {limit} creative visualizations for page {page}. For each:
 1. Choose the most insightful chart type

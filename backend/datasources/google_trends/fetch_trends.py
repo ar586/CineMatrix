@@ -32,12 +32,16 @@ class TrendsFetcher:
             # Parse Data
             interest_data = self.parser.parse_interest_over_time(raw_data)
             related_data = self.parser.parse_related_queries(raw_data)
+            region_data = self.parser.parse_interest_by_region(raw_data)
+            topic_data = self.parser.parse_related_topics(raw_data)
             
             return {
                 "keyword": title,
                 "timeframe": tf,
                 "interest_over_time": interest_data,
-                "related_queries": related_data
+                "interest_by_region": region_data,
+                "related_queries": related_data,
+                "related_topics": topic_data
             }
             
         except Exception as e:
