@@ -412,6 +412,16 @@ class Comment(BaseModel):
     text: str
     rating: Optional[int] = Field(None, ge=1, le=5)
     
+    # Like/Dislike functionality
+    likes: int = Field(default=0)
+    dislikes: int = Field(default=0)
+    liked_by: List[str] = Field(default_factory=list)  # usernames who liked
+    disliked_by: List[str] = Field(default_factory=list)  # usernames who disliked
+    
+    # Reply functionality
+    parent_id: Optional[str] = None  # For replies (references another comment _id)
+    replies: List[str] = Field(default_factory=list)  # List of reply comment _ids
+    
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
