@@ -50,7 +50,7 @@ export default async function Home() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
           <Flame size={48} color="#ff4757" />
-          <h1 style={{ fontSize: '3rem', margin: 0, fontWeight: 800 }}>Box Office Heat</h1>
+          <h1 style={{ fontSize: '3rem', margin: 0, fontWeight: 800 }}>Movie Matrix</h1>
         </div>
         <p style={{ color: '#a1a1aa', fontSize: '1.2rem', maxWidth: '600px' }}>
           Tracking real-time sentiment volatility and viral spikes across the cinematic universe.
