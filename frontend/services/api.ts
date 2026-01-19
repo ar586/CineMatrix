@@ -214,5 +214,21 @@ export const api = {
     getMovieYoutubeVideos: async (movieId: string) => {
         const response = await axios.get<YouTubeVideo[]>(`${API_BASE}/movies/${movieId}/youtube`);
         return response.data;
+    },
+    // Auth
+    login: async (formData: FormData) => {
+        // FormData for OAuth2PasswordRequestForm compliance
+        const response = await axios.post(`${API_BASE}/auth/token`, formData);
+        return response.data;
+    },
+    register: async (userData: any) => {
+        const response = await axios.post(`${API_BASE}/auth/register`, userData);
+        return response.data;
+    },
+    getMe: async (token: string) => {
+        const response = await axios.get(`${API_BASE}/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
     }
 };

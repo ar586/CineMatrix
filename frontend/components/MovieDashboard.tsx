@@ -9,7 +9,9 @@ const AspectRadar = dynamic(() => import('@/components/AspectRadar').then(mod =>
 import { InsightCard } from '@/components/InsightCard';
 import { InfiniteVisualizationFeed } from '@/components/InfiniteVisualizationFeed';
 import { RedditDiscussions } from '@/components/RedditDiscussions';
+import DiscussionSection from '@/components/DiscussionSection';
 import { MessageSquare, Youtube, FileText, Film, ThumbsUp, Eye, Users } from 'lucide-react';
+import UserRating from '@/components/UserRating';
 
 interface Props {
     dailyData: DailySentiment[];
@@ -22,7 +24,7 @@ interface Props {
 }
 
 export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, news, reddit, currentAspects, movie }) => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'reddit' | 'youtube' | 'wiki' | 'imdb' | 'news'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'reddit' | 'youtube' | 'wiki' | 'imdb' | 'news' | 'discussion'>('overview');
     const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideo[]>([]);
     const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
 
@@ -58,6 +60,7 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                 {[
                     { key: 'overview', label: 'Overview', icon: <Film size={16} /> },
                     { key: 'news', label: 'News', icon: <FileText size={16} /> },
+                    { key: 'discussion', label: 'Discussion', icon: <MessageSquare size={16} /> },
                     { key: 'reddit', label: 'Reddit', icon: <MessageSquare size={16} /> },
                     { key: 'youtube', label: 'YouTube', icon: <Youtube size={16} /> },
                     { key: 'wiki', label: 'Wiki', icon: <FileText size={16} /> },
@@ -65,7 +68,7 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                 ].map(tab => (
                     <button
                         key={tab.key}
-                        onClick={() => setActiveTab(tab.key as 'overview' | 'reddit' | 'youtube' | 'wiki' | 'imdb' | 'news')}
+                        onClick={() => setActiveTab(tab.key as 'overview' | 'reddit' | 'youtube' | 'wiki' | 'imdb' | 'news' | 'discussion')}
                         style={{
                             background: activeTab === tab.key ? '#1c1c21' : 'transparent',
                             color: activeTab === tab.key ? '#fff' : '#666',
@@ -210,6 +213,13 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                             {insights.length === 0 && <p style={{ color: '#666', textAlign: 'center' }}>No insights generated yet.</p>}
                         </div>
                     </div>
+
+                </div>
+            )}
+
+            {activeTab === 'discussion' && (
+                <div>
+                    {movie && <DiscussionSection movieId={movie._id || movie.movie_id || ''} />}
                 </div>
             )}
 
@@ -403,9 +413,12 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                                 )}
 
                                 <div style={{ flex: 1 }}>
-                                    <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>
-                                        {movie.title} {(movie.year || (movie.release_date && `(${new Date(movie.release_date).getFullYear()})`))}
-                                    </h2>
+                                    <div className="flex justify-between items-start">
+                                        <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>
+                                            {movie.title} {(movie.year || (movie.release_date && `(${new Date(movie.release_date).getFullYear()})`))}
+                                        </h2>
+                                        <UserRating movieId={movie._id || movie.movie_id || ''} />
+                                    </div>
                                     {movie.tagline && <p style={{ fontStyle: 'italic', color: '#999', marginBottom: '1.5rem' }}>"{movie.tagline}"</p>}
                                     {movie.rated && (
                                         <div style={{ display: 'inline-block', background: '#333', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>

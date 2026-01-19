@@ -1,6 +1,7 @@
 import { api } from '@/services/api';
 import type { Movie, DailySentiment, Insight, FeedItem, NewsArticle, RedditPost } from '@/services/api';
 import { MovieDashboard } from '@/components/MovieDashboard';
+import UserRating from '@/components/UserRating';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -53,7 +54,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
             </Link>
 
             {/* HEADER */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '2rem' }}>
                 <div>
                     <h1 style={{ fontSize: '3rem', margin: 0, fontWeight: 800 }}>{movie?.title || id}</h1>
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -84,6 +85,11 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
                             {movie?.cast && <span>Cast: <span style={{ color: '#ccc' }}>{movie.cast.slice(0, 3).join(", ")}</span></span>}
                         </div>
                     )}
+                </div>
+
+                {/* User Rating - Top Right */}
+                <div style={{ marginTop: '0.5rem' }}>
+                    <UserRating movieId={id} />
                 </div>
             </div>
 

@@ -33,7 +33,7 @@ praw==7.8.1
 prawcore==2.4.0
 propcache==0.4.1
 proto-plus==1.27.0
-protobuf==6.33.2
+protobuf
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 pydantic==2.12.5
@@ -72,3 +72,7 @@ langgraph
 langchain-google-genai
 langchain-core
 langchain
+bcrypt==3.2.2
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart

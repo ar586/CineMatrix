@@ -400,3 +400,21 @@ class DailyMovieSentiment(BaseModel):
         populate_by_name = True
         arbitrary_types_allowed = True
         json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class Comment(BaseModel):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    movie_id: str = Field(..., description="Link to Movie collection")
+    
+    user_id: str
+    username: str
+    
+    text: str
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {datetime: lambda dt: dt.isoformat()}

@@ -18,7 +18,31 @@ from backend.datasources.youtube.fetch_videos import YouTubeFetcher
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("API")
 
-app = FastAPI(title="CineMatrix API", version="1.0")
+from contextlib import asynccontextmanager
+from backend.database.deps import get_mongo_client
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("Starting up...")
+    mongo = get_mongo_client()
+    # Provide the db instance to the app state
+    # app.state.db = mongo.get_db() # If we wanted to check connection here
+    yield
+    # Shutdown
+    logger.info("Shutting down...")
+    if mongo.client:
+        mongo.client.close()
+
+app = FastAPI(title="CineMatrix API", version="1.0", lifespan=lifespan)
+
+# Authentication
+from backend.auth.router import router as auth_router
+app.include_router(auth_router)
+
+# Discussion
+from backend.api.discussion import router as discussion_router
+app.include_router(discussion_router)
 
 # CORS (Allow Frontend)
 app.add_middleware(
@@ -30,15 +54,20 @@ app.add_middleware(
 )
 
 # DB connection
-mongo = MongoDBClient()
-db = mongo.get_db()
+# mongo = MongoDBClient()  <-- REMOVE: Do not instantiate global client here
+# db = mongo.get_db()      <-- REMOVE
 
 @app.get("/api/health")
 def health_check():
+    # Helper to check DB status without full dependency chain
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     return {"status": "ok", "db": "connected" if db is not None else "disconnected"}
 
 @app.get("/api/movies", response_model=List[Movie])
 def get_movies():
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     # Sort: Active first, then by release date (newest first)
@@ -47,6 +76,8 @@ def get_movies():
 
 @app.put("/api/movies/{movie_id}/status")
 def update_movie_status(movie_id: str, is_active: bool = Body(..., embed=True)):
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     try:
@@ -68,6 +99,8 @@ from bson import ObjectId
 
 @app.get("/api/movies/{movie_id}", response_model=Movie)
 def get_movie(movie_id: str):
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     try:
@@ -91,6 +124,8 @@ def get_movie(movie_id: str):
 
 @app.get("/api/movies/{movie_id}/daily", response_model=List[DailyMovieSentiment])
 def get_daily_sentiment(movie_id: str):
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     # Fetch last 30 days
@@ -99,6 +134,8 @@ def get_daily_sentiment(movie_id: str):
 
 @app.get("/api/movies/{movie_id}/insights", response_model=List[Insight])
 def get_insights(movie_id: str):
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     cursor = db.insights.find({"movie_id": movie_id}).sort("generated_at", -1).limit(20)
@@ -106,6 +143,8 @@ def get_insights(movie_id: str):
 
 @app.get("/api/movies/{movie_id}/feed")
 def get_feed(movie_id: str, limit: int = 50):
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     # Fetch latest raw sentiments
@@ -149,6 +188,8 @@ def get_feed(movie_id: str, limit: int = 50):
 
 @app.get("/api/movies/{movie_id}/news")
 def get_news(movie_id: str, limit: int = 10):
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     # Fetch news articles sorted by relevance and date
@@ -176,6 +217,8 @@ def get_news(movie_id: str, limit: int = 10):
 @app.get("/api/movies/{movie_id}/reddit")
 def get_reddit_posts(movie_id: str, limit: int = 10):
     """Get Reddit posts and top comments for a movie"""
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     # Fetch Reddit posts sorted by score (most popular first)
@@ -227,6 +270,8 @@ def get_visualizations(movie_id: str, page: int = 1, limit: int = 5):
     try:
         from agents.visualization.viz_agent import VisualizationAgent
         # Pass the global db object directly
+        mongo = get_mongo_client()
+        db = mongo.get_db()
         logger.info(f"DEBUG: Global db object in server: {db}")
         agent = VisualizationAgent(db=db)
         result = agent.generate_visualizations(movie_id, page, limit)
@@ -241,6 +286,8 @@ def get_youtube_videos(movie_id: str):
     Get rich YouTube videos (Trailers + Reviews) with channel info and comments.
     Fetcher is instantiated per request which is okay for now.
     """
+    mongo = get_mongo_client()
+    db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     # Resolve movie title
@@ -293,4 +340,4 @@ def get_youtube_videos(movie_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("backend.api.server:app", host="0.0.0.0", port=8000, reload=True)
