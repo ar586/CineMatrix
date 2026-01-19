@@ -91,7 +91,26 @@ button:hover {
   font-weight: bold;
 }
 
-/* Shimmer animation for skeleton loaders */
+/* Hover Effects */
+.card-hover-effect {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-8px);
+  border-color: rgba(100, 108, 255, 0.3);
+  background: rgba(19, 19, 22, 0.9) !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6) !important;
+}
+
+.jumbo-poster {
+  transition: transform 0.5s ease;
+}
+
+.card-hover-effect:hover .jumbo-poster {
+  transform: scale(1.05);
+}
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;

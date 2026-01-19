@@ -11,7 +11,6 @@ import { InfiniteVisualizationFeed } from '@/components/InfiniteVisualizationFee
 import { RedditDiscussions } from '@/components/RedditDiscussions';
 import DiscussionSection from '@/components/DiscussionSection';
 import { MessageSquare, Youtube, FileText, Film, ThumbsUp, Eye, Users } from 'lucide-react';
-import UserRating from '@/components/UserRating';
 
 interface Props {
     dailyData: DailySentiment[];
@@ -134,12 +133,12 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
 
                     {/* Dynamic Visualizations */}
                     {movie && (
-                        <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                            <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>📊 Dynamic Insights</h3>
-                            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem', maxWidth: '600px' }}>
+                        <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', width: '100%' }}>
+                            <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem', textAlign: 'center' }}>📊 Dynamic Insights</h3>
+                            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem', maxWidth: '600px', margin: '0 auto 1.5rem auto', textAlign: 'center' }}>
                                 AI-generated visualizations analyzing sentiment trends, platform activity, and audience engagement.
                             </p>
-                            <InfiniteVisualizationFeed movieId={movie._id || movie.movie_id || ''} />
+                            <InfiniteVisualizationFeed movieId={movie.movie_id || movie._id || ''} />
                         </div>
                     )}
 
@@ -413,12 +412,9 @@ export const MovieDashboard: React.FC<Props> = ({ dailyData, insights, feed, new
                                 )}
 
                                 <div style={{ flex: 1 }}>
-                                    <div className="flex justify-between items-start">
-                                        <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>
-                                            {movie.title} {(movie.year || (movie.release_date && `(${new Date(movie.release_date).getFullYear()})`))}
-                                        </h2>
-                                        <UserRating movieId={movie._id || movie.movie_id || ''} />
-                                    </div>
+                                    <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>
+                                        {movie.title} {(movie.year || (movie.release_date && `(${new Date(movie.release_date).getFullYear()})`))}
+                                    </h2>
                                     {movie.tagline && <p style={{ fontStyle: 'italic', color: '#999', marginBottom: '1.5rem' }}>"{movie.tagline}"</p>}
                                     {movie.rated && (
                                         <div style={{ display: 'inline-block', background: '#333', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>

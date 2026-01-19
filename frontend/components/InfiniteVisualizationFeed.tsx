@@ -89,7 +89,8 @@ export function InfiniteVisualizationFeed({ movieId }: Props) {
             border: '1px solid #333',
             overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            width: '100%'
         }}>
             {visualizations.map((viz, index) => (
                 <VisualizationCard key={`${viz.id}-${index}`} visualization={viz} />

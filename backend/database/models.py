@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel, Field, BeforeValidator
+from pydantic import BaseModel, Field, BeforeValidator, field_validator
 from typing import Optional, List, Annotated, Union, Dict
 from datetime import datetime
 
@@ -42,7 +42,18 @@ class WikipediaData(BaseModel):
 
 class Movie(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    movie_id: Optional[str] = Field(None, description="IMDB ID usually, e.g., tt1375666")
+    movie_id: Optional[str] = Field(None, description="IMDB ID (tt...) or Custom ID (cm_...)")
+    
+    @field_validator('movie_id')
+    def validate_movie_id(cls, v):
+        if v:
+            if not (v.startswith('tt') or v.startswith('cm_')):
+                # We won't raise an error yet to allow for migration of legacy IDs, 
+                # but we'll document the preference.
+                # raise ValueError('movie_id must start with "tt" (IMDB) or "cm_" (Custom)')
+                pass
+        return v
+
     tmdb_id: Optional[int] = None
     title: str
     original_title: Optional[str] = None
@@ -97,6 +108,9 @@ class Movie(BaseModel):
     
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Runtime-enriched field (not stored in DB, populated by API)
+    daily_sentiment_summary: Optional[Dict] = Field(default=None, description="Latest daily sentiment summary")
     
     is_active: bool = Field(default=True, description="Whether the movie is active for daily processing")
     

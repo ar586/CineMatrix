@@ -72,7 +72,33 @@ def get_movies():
     
     # Sort: Active first, then by release date (newest first)
     cursor = db.movies.find({}).sort([("is_active", -1), ("release_date", -1)])
-    return list(cursor)
+    movies = list(cursor)
+    
+    # Enrich each movie with latest daily sentiment summary
+    for movie in movies:
+        movie_id = movie.get("movie_id") or str(movie.get("_id"))
+        
+        # Fetch the most recent daily sentiment for this movie
+        latest_sentiment = db.daily_movie_sentiments.find_one(
+            {"movie_id": movie_id},
+            sort=[("date", -1)]
+        )
+        
+        if latest_sentiment:
+            movie["daily_sentiment_summary"] = {
+                "score": latest_sentiment.get("overall_sentiment", 0),
+                "volume": latest_sentiment.get("volume", 0),
+                "volatility": latest_sentiment.get("volatility", 0)
+            }
+        else:
+            # Provide default values if no sentiment data exists
+            movie["daily_sentiment_summary"] = {
+                "score": 0,
+                "volume": 0,
+                "volatility": 0
+            }
+    
+    return movies
 
 @app.put("/api/movies/{movie_id}/status")
 def update_movie_status(movie_id: str, is_active: bool = Body(..., embed=True)):
@@ -336,6 +362,77 @@ def get_youtube_videos(movie_id: str):
         })
         
     return result
+
+
+# User Profile Endpoints
+from typing import Annotated
+from fastapi import Depends
+from backend.auth.utils import get_current_user, User
+
+@app.get("/api/users/me/comments")
+async def get_user_comments(
+    current_user: Annotated[User, Depends(get_current_user)],
+    limit: int = 50
+):
+    """Get authenticated user's comments with movie information"""
+    mongo = get_mongo_client()
+    db = mongo.get_db()
+    if db is None: raise HTTPException(500, "DB Connection Failed")
+    
+    # Fetch user's comments
+    comments_cursor = db.comments.find(
+        {"username": current_user.username}
+    ).sort("created_at", -1).limit(limit)
+    
+    comments = []
+    for comment in comments_cursor:
+        # Fetch movie info
+        movie = db.movies.find_one({"movie_id": comment.get("movie_id")})
+        
+        comments.append({
+            "_id": str(comment["_id"]),
+            "movie_id": comment.get("movie_id"),
+            "movie_title": movie.get("title") if movie else "Unknown Movie",
+            "text": comment.get("text"),
+            "rating": comment.get("rating"),
+            "likes": comment.get("likes", 0),
+            "dislikes": comment.get("dislikes", 0),
+            "created_at": comment.get("created_at", datetime.now()).isoformat()
+        })
+    
+    return comments
+
+@app.get("/api/users/me/ratings")
+async def get_user_ratings(
+    current_user: Annotated[User, Depends(get_current_user)],
+    limit: int = 50
+):
+    """Get authenticated user's ratings (comments with ratings)"""
+    mongo = get_mongo_client()
+    db = mongo.get_db()
+    if db is None: raise HTTPException(500, "DB Connection Failed")
+    
+    # Fetch user's comments that have ratings
+    ratings_cursor = db.comments.find({
+        "username": current_user.username,
+        "rating": {"$ne": None}
+    }).sort("created_at", -1).limit(limit)
+    
+    ratings = []
+    for comment in ratings_cursor:
+        # Fetch movie info
+        movie = db.movies.find_one({"movie_id": comment.get("movie_id")})
+        
+        ratings.append({
+            "_id": str(comment["_id"]),
+            "movie_id": comment.get("movie_id"),
+            "movie_title": movie.get("title") if movie else "Unknown Movie",
+            "rating": comment.get("rating"),
+            "text": comment.get("text"),
+            "created_at": comment.get("created_at", datetime.now()).isoformat()
+        })
+    
+    return ratings
 
 
 if __name__ == "__main__":
