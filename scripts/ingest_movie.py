@@ -35,20 +35,44 @@ def ingest_movie(movie_title: str, imdb_id: str):
     print("\n1️⃣  Setting up movie document...")
     existing = db.movies.find_one({"movie_id": imdb_id})
     
+    # helper for slug generation
+    def create_slug(title, year=None):
+        import re
+        base_slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+        if year:
+            return f"{base_slug}-{year}"
+        return base_slug
+
     if existing:
         movie_obj_id = str(existing["_id"])
         print(f"   ✅ Movie exists (ObjectId: {movie_obj_id})")
         print(f"   🔄 Will update with fresh data")
     else:
+        # Generate initial slug
+        slug = create_slug(movie_title)
+        
+        # Check collision
+        if db.movies.find_one({"slug": slug}):
+            # Try appending year
+             # We don't have year easily here without fetching, but we can update it later or just use random for now? 
+             # Let's assume user might not provide year. We'll use a counter.
+             print(f"   ⚠️  Slug collision for '{slug}', resolving...")
+             counter = 1
+             while db.movies.find_one({"slug": f"{slug}-{counter}"}):
+                 counter += 1
+             slug = f"{slug}-{counter}"
+        
         # Create new with IMDB ID as movie_id
         result = db.movies.insert_one({
             "title": movie_title,
             "movie_id": imdb_id,  # CRITICAL: Use IMDB ID, not ObjectId
+            "slug": slug,
             "is_active": True,
             "created_at": datetime.utcnow()
         })
         movie_obj_id = str(result.inserted_id)
         print(f"   ✅ Created new movie (ObjectId: {movie_obj_id})")
+        print(f"   🔗 Slug: {slug}")
     
     # Step 2: Run the pipeline with ObjectId (for internal use)
     # The pipeline will use this to store data, but we'll fix references after

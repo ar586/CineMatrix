@@ -57,6 +57,7 @@ class Movie(BaseModel):
     tmdb_id: Optional[int] = None
     title: str
     original_title: Optional[str] = None
+    slug: Optional[str] = Field(default=None, description="URL-friendly slug (e.g., 3-idiots-2009)")
     
     language: Optional[str] = "en"
     regions: List[str] = Field(default_factory=list)

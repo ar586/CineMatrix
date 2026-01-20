@@ -130,10 +130,20 @@ def get_movie(movie_id: str):
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     try:
-        # Try finding by ObjectId
-        movie = db.movies.find_one({"_id": ObjectId(movie_id)})
+        # 1. Try finding by slug
+        movie = db.movies.find_one({"slug": movie_id})
+        
+        if not movie:
+            # 2. Try finding by ObjectId
+            if ObjectId.is_valid(movie_id):
+                movie = db.movies.find_one({"_id": ObjectId(movie_id)})
+            
+            # 3. Try finding by movie_id (tt ID)
+            if not movie:
+                movie = db.movies.find_one({"movie_id": movie_id})
+                
     except Exception:
-        # Fallback to finding by movie_id (tt ID) if ObjectId conversion fails
+        # Fallback catches
         movie = db.movies.find_one({"movie_id": movie_id})
         
     if not movie:

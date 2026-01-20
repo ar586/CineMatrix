@@ -18,6 +18,7 @@ export interface Movie {
         }>;
     };
     movie_id: string;
+    slug?: string;
     title: string;
     production_companies?: string[];
     trailers?: Array<{

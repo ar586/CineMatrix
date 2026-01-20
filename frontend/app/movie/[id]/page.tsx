@@ -4,6 +4,42 @@ import { MovieDashboard } from '@/components/MovieDashboard';
 import UserRating from '@/components/UserRating';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import type { Metadata, ResolvingMetadata } from 'next';
+
+export async function generateMetadata(
+    { params }: { params: Promise<{ id: string }> },
+    parent: ResolvingMetadata
+): Promise<Metadata> {
+    const { id } = await params;
+
+    try {
+        const movie = await api.getMovie(id);
+        if (!movie) return { title: 'Movie Not Found' };
+
+        const previousImages = (await parent).openGraph?.images || [];
+
+        return {
+            title: movie.title,
+            description: movie.overview || `Deep sentiment analysis and audience insights for ${movie.title}.`,
+            openGraph: {
+                title: `${movie.title} - Sentiment & Insights`,
+                description: movie.tagline || movie.overview?.slice(0, 150) + '...',
+                images: movie.poster_url ? [movie.poster_url, ...previousImages] : previousImages,
+            },
+            twitter: {
+                card: 'summary_large_image',
+                title: movie.title,
+                description: movie.tagline || `Check out the AI sentiment analysis for ${movie.title}`,
+                images: movie.poster_url ? [movie.poster_url] : [],
+            }
+        };
+    } catch (error) {
+        return {
+            title: 'CineMatrix Movie Analysis',
+            description: 'Real-time movie sentiment tracking.'
+        };
+    }
+}
 
 export const dynamic = 'force-dynamic';
 

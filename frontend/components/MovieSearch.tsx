@@ -207,7 +207,7 @@ export default function MovieSearch({ initialMovies }: { initialMovies: Movie[] 
 function JumbotronCard({ movie, getVolume }: { movie: Movie, getVolume: any }) {
     return (
         <Link
-            href={`/movie/${movie.movie_id}`}
+            href={`/movie/${movie.slug || movie.movie_id}`}
             style={{ textDecoration: 'none', color: 'inherit' }}
         >
             <div
@@ -253,7 +253,7 @@ function JumbotronCard({ movie, getVolume }: { movie: Movie, getVolume: any }) {
 function MovieCard({ movie }: { movie: Movie }) {
     return (
         <Link
-            href={`/movie/${movie.movie_id}`}
+            href={`/movie/${movie.slug || movie.movie_id}`}
             style={{ textDecoration: 'none', color: 'inherit' }}
         >
             <div
