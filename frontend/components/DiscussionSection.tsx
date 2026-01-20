@@ -22,7 +22,7 @@ interface DiscussionSectionProps {
     movieId: string;
 }
 
-const timeAgo = (date: string) => {
+const timeAgo = (date: any) => {
     // Handle both ISO strings and MongoDB date objects
     let dateStr = typeof date === 'string' ? date : date.toString();
 
