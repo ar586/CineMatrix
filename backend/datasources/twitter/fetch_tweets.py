@@ -39,15 +39,4 @@ class TwitterFetcher:
         response_text = self.client.chat_completion(messages)
         return self.parser.parse_response(response_text)
 
-if __name__ == "__main__":
-    fetcher = TwitterFetcher()
-    title = "Inception"
-    print(f"Asking Grok about {title} on X...")
-    data = fetcher.get_discussions(title)
-    
-    if data:
-        print(f"Sentiment: {data.get('sentiment')} ({data.get('score')}/100)")
-        print(f"Summary: {data.get('summary')}")
-        print("Topics:", data.get('trending_topics'))
-    else:
-        print("No data returned.")
+

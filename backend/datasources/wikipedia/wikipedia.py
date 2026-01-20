@@ -149,22 +149,4 @@ class WikipediaMovieScraper:
         return "\n\n".join(plot_text)
 
 # Example usage
-if __name__ == "__main__":
-    scraper = WikipediaMovieScraper()
-    movie_name = "Inception"
-    print(f"Searching for {movie_name}...")
-    url = scraper.search_movie(movie_name)
-    
-    if url:
-        print(f"Found URL: {url}")
-        details = scraper.scrape_details(url)
-        if details:
-            print("\n--- Move Details ---")
-            print(f"Title: {details['title']}")
-            print("\n[Infobox]")
-            for k, v in details['infobox'].items():
-                print(f"{k}: {v}")
-            print("\n[Plot]")
-            print(details['plot'][:500] + "..." if len(details['plot']) > 500 else details['plot'])
-    else:
-        print("Movie not found.")
+

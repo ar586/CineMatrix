@@ -80,19 +80,4 @@ class MovieDataFetcher:
             
         return movie_data
 
-if __name__ == "__main__":
-    # Example usage
-    fetcher = MovieDataFetcher()
-    title = "Inception"
-    print(f"Fetching details for {title}...")
-    details = fetcher.get_movie_details(title)
-    
-    if details:
-        print(f"Title: {details.get('title')}")
-        print(f"TMDB ID: {details.get('tmdb_id')}")
-        print(f"IMDB Rating: {details.get('imdb', {}).get('rating')}")
-        print(f"Rotten Tomatoes: {details.get('rotten_tomatoes', {}).get('critics_score')}%")
-        print(f"Metascore: {details.get('metascore')}")
-        print(f"Budget: ${details.get('budget'):,}" if details.get('budget') else "Budget: N/A")
-    else:
-        print("Movie not found or error occurred.")
+

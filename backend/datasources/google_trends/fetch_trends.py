@@ -48,21 +48,4 @@ class TrendsFetcher:
             print(f"Error fetching trends for {title}: {e}")
             return None
 
-# Simple main for testing
-if __name__ == "__main__":
-    fetcher = TrendsFetcher()
-    title = "Inception"
-    print(f"Fetching trends for {title}...")
-    data = fetcher.get_movie_trends(title)
-    
-    if data:
-        print(f"Found {len(data['interest_over_time'])} data points for interest over time.")
-        if data['related_queries']:
-            print("Related queries found.")
-            for query_key, queries in data['related_queries'].items():
-                print(f"--- For query: {query_key} ---")
-                top = queries.get('top', [])
-                for t in top[:5]:
-                    print(f"  [Top] {t['query']} ({t['value']})")
-    else:
-        print("No data found or error occurred.")
+

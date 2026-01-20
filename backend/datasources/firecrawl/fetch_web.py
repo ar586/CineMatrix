@@ -47,31 +47,4 @@ class FirecrawlFetcher:
             print(f"Firecrawl Error: {e}")
             return None
 
-if __name__ == "__main__":
-    fetcher = FirecrawlFetcher()
-    query = "Inception movie analysis"
-    print(f"Fetching web data for: {query}")
-    
-    # We'll rely on env var in production.
-    data = fetcher.search_and_scrape(query)
-    
-    # Handle response regardless of whether it's a dict or Pydantic object
-    search_results = []
-    if isinstance(data, dict):
-        search_results = data.get('data', [])
-    elif hasattr(data, 'data'):
-        search_results = data.data
-    else:
-        print("Unknown response format")
 
-    if search_results:
-        for item in search_results:
-            # Item might also be an object or dict
-            title = item.get('title') if isinstance(item, dict) else getattr(item, 'title', None)
-            url = item.get('url') if isinstance(item, dict) else getattr(item, 'url', None)
-            markdown = item.get('markdown') if isinstance(item, dict) else getattr(item, 'markdown', '')
-            
-            print(f"\nTitle: {title}")
-            print(f"URL: {url}")
-            if markdown:
-                 print(f"Content Snippet: {markdown[:100]}...")

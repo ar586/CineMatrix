@@ -93,15 +93,4 @@ class YouTubeFetcher:
             print(f"Error fetching YouTube videos for query '{query}': {e}")
             return []
 
-if __name__ == "__main__":
-    fetcher = YouTubeFetcher()
-    title = "Inception"
-    print(f"Fetching trailers for {title}...")
-    trailers = fetcher.get_movie_trailers(title)
-    
-    if trailers:
-        print(f"Found {len(trailers)} trailers:")
-        for t in trailers:
-            print(f"- {t['title']} ({t['views']} views) [{t['duration']}]")
-    else:
-        print("No trailers found or API key missing.")
+

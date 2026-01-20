@@ -31,15 +31,4 @@ class RedditFetcher:
                 print("Check your REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET environment variables.")
             return []
 
-if __name__ == "__main__":
-    fetcher = RedditFetcher()
-    title = "Inception"
-    print(f"Searching Reddit for {title}...")
-    posts = fetcher.get_movie_discussions(title)
-    
-    if posts:
-        print(f"Found {len(posts)} posts:")
-        for p in posts[:3]:
-            print(f"- [{p['score']}] {p['title']} ({p['subreddit']})")
-    else:
-        print("No posts found (or auth error).")
+
