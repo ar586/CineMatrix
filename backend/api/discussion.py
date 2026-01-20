@@ -11,7 +11,7 @@ logger = logging.getLogger("API.Discussion")
 
 router = APIRouter(prefix="/api/movies/{movie_id}/comments", tags=["discussion"])
 
-@router.get("/", response_model=List[Comment])
+@router.get("", response_model=List[Comment])
 def get_comments(movie_id: str, db: Annotated[any, Depends(get_db)]):
     if db is None:
         raise HTTPException(500, "DB Connection Failed")
@@ -19,7 +19,7 @@ def get_comments(movie_id: str, db: Annotated[any, Depends(get_db)]):
     cursor = db.comments.find({"movie_id": movie_id}).sort("created_at", -1)
     return list(cursor)
 
-@router.post("/", response_model=Comment)
+@router.post("", response_model=Comment)
 def add_comment(
     movie_id: str,
     db: Annotated[any, Depends(get_db)],

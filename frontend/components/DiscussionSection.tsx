@@ -55,7 +55,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
 
     const fetchComments = async () => {
         try {
-            const res = await fetch(`/api/movies/${movieId}/comments/`);
+            const res = await fetch(`/api/movies/${movieId}/comments`);
             if (res.ok) {
                 const data = await res.json();
                 // Only show top-level comments (no parent_id)
@@ -76,7 +76,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
         setError('');
 
         try {
-            const res = await fetch(`/api/movies/${movieId}/comments/`, {
+            const res = await fetch(`/api/movies/${movieId}/comments`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -146,7 +146,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
         if (!token || !replyText.trim()) return;
 
         try {
-            const res = await fetch(`/api/movies/${movieId}/comments/`, {
+            const res = await fetch(`/api/movies/${movieId}/comments`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
