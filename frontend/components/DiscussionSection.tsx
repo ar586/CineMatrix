@@ -55,7 +55,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
 
     const fetchComments = async () => {
         try {
-            const res = await fetch(`http://localhost:8000/api/movies/${movieId}/comments/`);
+            const res = await fetch(`/api/movies/${movieId}/comments/`);
             if (res.ok) {
                 const data = await res.json();
                 // Only show top-level comments (no parent_id)
@@ -76,7 +76,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
         setError('');
 
         try {
-            const res = await fetch(`http://localhost:8000/api/movies/${movieId}/comments/`, {
+            const res = await fetch(`/api/movies/${movieId}/comments/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -106,7 +106,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
         if (!token) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/movies/${movieId}/comments/${commentId}/like`, {
+            const res = await fetch(`/api/movies/${movieId}/comments/${commentId}/like`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -126,7 +126,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
         if (!token) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/movies/${movieId}/comments/${commentId}/dislike`, {
+            const res = await fetch(`/api/movies/${movieId}/comments/${commentId}/dislike`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -146,7 +146,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
         if (!token || !replyText.trim()) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/movies/${movieId}/comments/`, {
+            const res = await fetch(`/api/movies/${movieId}/comments/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -185,7 +185,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
         // Fetch replies
         setLoadingReplies({ ...loadingReplies, [commentId]: true });
         try {
-            const res = await fetch(`http://localhost:8000/api/movies/${movieId}/comments/${commentId}/replies`);
+            const res = await fetch(`/api/movies/${movieId}/comments/${commentId}/replies`);
             if (res.ok) {
                 const replies = await res.json();
                 setExpandedReplies({ ...expandedReplies, [commentId]: replies });

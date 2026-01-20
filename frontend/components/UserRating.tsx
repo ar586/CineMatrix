@@ -25,7 +25,7 @@ export default function UserRating({ movieId }: { movieId: string }) {
 
     const fetchUserRating = async () => {
         try {
-            const res = await fetch(`http://localhost:8000/api/movies/${movieId}/comments/`);
+            const res = await fetch(`/api/movies/${movieId}/comments/`);
             if (res.ok) {
                 const data: Comment[] = await res.json();
                 // Find latest rating by this user
@@ -44,7 +44,7 @@ export default function UserRating({ movieId }: { movieId: string }) {
         setSubmitting(true);
         try {
             // Post a new comment with just rating
-            const res = await fetch(`http://localhost:8000/api/movies/${movieId}/comments/`, {
+            const res = await fetch(`/api/movies/${movieId}/comments/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

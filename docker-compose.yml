@@ -20,15 +20,25 @@ services:
       - "8000:8000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/cinematrix
-      # Pass through other env vars from .env
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      # API Keys
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - TMDB_API_KEY=${TMDB_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
       - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
       - SERPAPI_API_KEY=${SERPAPI_API_KEY}
+      - XAI_API_KEY=${XAI_API_KEY}
+      - IMDB_API_KEY=${IMDB_API_KEY}
+      # Reddit
       - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}
       - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET}
+      - REDDIT_USERNAME=${REDDIT_USERNAME}
+      - REDDIT_PASSWORD=${REDDIT_PASSWORD}
+      # Auth
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       - mongo
     networks:
