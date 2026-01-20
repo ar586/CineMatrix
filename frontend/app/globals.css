@@ -111,6 +111,7 @@ button:hover {
   transform: scale(1.05);
 }
 
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -119,4 +120,161 @@ button:hover {
   100% {
     background-position: 200% 0;
   }
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+
+  body>div,
+  #root {
+    padding: 1rem;
+    padding-bottom: 5rem;
+    /* Space for bottom nav or just aesthetic */
+  }
+
+  /* Make jumbotron stack on mobile */
+  .jumbotron-responsive {
+    flex-direction: column !important;
+    padding: 2rem 1rem !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  /* Stack flex containers on mobile */
+  .flex-stack-mobile {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* Adjust grid columns for mobile */
+  .grid-responsive {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Make horizontal scroll containers */
+  .scroll-x-mobile {
+    display: flex !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.5rem;
+  }
+
+  /* Hide scrollbar for clean UI */
+  .scroll-x-mobile::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Homepage Mobile specific */
+  .search-bar-responsive {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    margin-bottom: 2rem;
+    max-width: none !important;
+  }
+}
+
+/* Base Responsive Grid (Desktop default, Mobile override above) */
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 2rem;
+}
+
+.jumbotron-card {
+  width: 260px;
+}
+
+@media (max-width: 640px) {
+  .movie-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    /* Smaller cards on small details */
+    gap: 1rem;
+  }
+
+  .jumbotron-card {
+    width: 100% !important;
+    max-width: 300px;
+  }
+
+  /* Dashboard Mobile specific */
+  .details-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .details-left-col {
+    border-right: none !important;
+    border-bottom: 1px solid #333;
+    padding-right: 0 !important;
+    padding-bottom: 1rem;
+    text-align: left !important;
+  }
+
+  /* Discussion Mobile Specific */
+  @media (max-width: 768px) {
+    .reply-indent {
+      margin-left: 1rem !important;
+      border-left: 2px solid #333;
+      padding-left: 1rem;
+    }
+  }
+
+  .youtube-card-inner {
+    flex-direction: column !important;
+  }
+
+  .youtube-thumbnail {
+    width: 100% !important;
+    height: 180px;
+  }
+
+  .tabs-container {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 5px;
+    margin-bottom: 1.5rem !important;
+    border-bottom: 1px solid #27272a;
+  }
+
+  .tabs-container button {
+    flex-shrink: 0;
+  }
+}
+
+/* Base Dashboard Classes */
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  font-size: 1rem;
+  color: #ccc;
+}
+
+.details-left-col {
+  text-align: right;
+  padding-right: 1rem;
+  border-right: 1px solid #333;
+}
+
+.youtube-card-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.youtube-thumbnail {
+  width: 280px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tabs-container {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 1rem;
 }

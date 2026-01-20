@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta, timezone
 from backend.database.client import MongoDBClient
 from backend.llm.client import LLMService
+from agents.visualization.data_resolver import VisualizationDataResolver
 
 logger = logging.getLogger(__name__)
 
@@ -201,6 +202,25 @@ class VisualizationAgent:
             if not cached_list:
                 logger.info(f"No cached visualizations found for {movie_id}")
                 return self._no_data_response(page, movie_id)
+            
+            # NEW: Initialize data resolver
+            resolver = VisualizationDataResolver(db)
+            
+            # Resolve actual data for each visualization
+            for viz in cached_list:
+                spec = viz.get("spec", {})
+                chart_type = spec.get("chart_type")
+                data_query = spec.get("data_query", "")
+                
+                # Only resolve data for chart types (not text cards)
+                if chart_type and viz.get("type") == "chart":
+                    try:
+                        resolved_data = resolver.resolve_data(movie_id, chart_type, data_query)
+                        spec["data"] = resolved_data
+                        logger.info(f"Resolved {len(resolved_data)} data points for {chart_type} chart")
+                    except Exception as e:
+                        logger.error(f"Failed to resolve data for {chart_type}: {e}")
+                        spec["data"] = []  # Empty array instead of undefined
             
             # Get total count for pagination
             total_count = db.visualization_components.count_documents({"movie_id": movie_id})

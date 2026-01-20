@@ -55,6 +55,7 @@ export default function MovieSearch({ initialMovies }: { initialMovies: Movie[] 
         <div>
             {/* JUMBOTRON CONTAINER (Always Consistent) */}
             <div
+                className="jumbotron-responsive"
                 style={{
                     marginBottom: '4rem',
                     padding: '4rem 2rem',
@@ -82,7 +83,7 @@ export default function MovieSearch({ initialMovies }: { initialMovies: Movie[] 
                 }} />
 
                 {/* SEARCH BAR: Absolute Top-Left inside Jumbotron */}
-                <div style={{
+                <div className="search-bar-responsive" style={{
                     position: 'absolute',
                     top: '2rem',
                     left: '2rem',
@@ -147,7 +148,7 @@ export default function MovieSearch({ initialMovies }: { initialMovies: Movie[] 
                     <div style={{ width: '100%', marginTop: '2rem' }}>
                         {/* SEARCH RESULTS GRID */}
                         {filteredMovies.length > 0 ? (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '2rem', width: '100%' }}>
+                            <div className="movie-grid" style={{ width: '100%' }}>
                                 {filteredMovies.map(movie => (
                                     <MovieCard key={movie.movie_id} movie={movie} />
                                 ))}
@@ -176,7 +177,7 @@ export default function MovieSearch({ initialMovies }: { initialMovies: Movie[] 
                                 <span style={{ width: '6px', height: '36px', background: '#646cff', borderRadius: '3px', boxShadow: '0 0 15px rgba(100, 108, 255, 0.5)' }}></span>
                                 Latest Releases
                             </h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '2.5rem' }}>
+                            <div className="movie-grid">
                                 {latestReleases.map(movie => (
                                     <MovieCard key={movie.movie_id} movie={movie} />
                                 ))}
@@ -190,7 +191,7 @@ export default function MovieSearch({ initialMovies }: { initialMovies: Movie[] 
                                 <span style={{ width: '6px', height: '36px', background: '#ff4757', borderRadius: '3px', boxShadow: '0 0 15px rgba(255, 71, 87, 0.5)' }}></span>
                                 Modern Classics
                             </h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '2.5rem' }}>
+                            <div className="movie-grid">
                                 {modernClassics.map(movie => (
                                     <MovieCard key={movie.movie_id} movie={movie} />
                                 ))}
@@ -211,14 +212,14 @@ function JumbotronCard({ movie, getVolume }: { movie: Movie, getVolume: any }) {
             style={{ textDecoration: 'none', color: 'inherit' }}
         >
             <div
-                className="card-hover-effect"
+                className="card-hover-effect jumbotron-card"
                 style={{
                     cursor: 'pointer',
                     background: 'rgba(19, 19, 22, 0.6)',
                     backdropFilter: 'blur(10px)',
                     padding: '1.5rem',
                     borderRadius: '20px',
-                    width: '260px',
+                    // Width moved to class
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'

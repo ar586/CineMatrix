@@ -560,7 +560,7 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
 
                                     {/* Nested Replies */}
                                     {expandedReplies[comment._id] && (
-                                        <div style={{ marginTop: '16px', marginLeft: '56px', borderLeft: '2px solid #303030', paddingLeft: '16px' }}>
+                                        <div className="reply-indent" style={{ marginTop: '16px', borderLeft: '2px solid #303030', paddingLeft: '16px' }}>
                                             {expandedReplies[comment._id].map((reply) => {
                                                 const userLikedReply = user && reply.liked_by.includes(user.username);
                                                 const userDislikedReply = user && reply.disliked_by.includes(user.username);
