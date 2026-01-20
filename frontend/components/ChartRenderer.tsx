@@ -5,12 +5,13 @@ interface ChartRendererProps {
     chartType: string;
     title: string;
     description?: string;
+    data?: any[];
 }
 
 const COLORS = ['#646cff', '#00ff9d', '#ffa502', '#ff4757', '#a29bfe', '#fd79a8'];
 
-export function ChartRenderer({ chartType, title, description }: ChartRendererProps) {
-    // Sample data based on chart type
+export function ChartRenderer({ chartType, title, description, data: providedData }: ChartRendererProps) {
+    // Sample data based on chart type (Fallback if no data provided)
     const getSampleData = () => {
         switch (chartType) {
             case 'line':
@@ -48,7 +49,7 @@ export function ChartRenderer({ chartType, title, description }: ChartRendererPr
         }
     };
 
-    const data = getSampleData();
+    const data = (providedData && providedData.length > 0) ? providedData : getSampleData();
 
     const renderChart = () => {
         switch (chartType) {

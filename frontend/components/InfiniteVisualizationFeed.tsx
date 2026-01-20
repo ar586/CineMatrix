@@ -14,6 +14,7 @@ interface Visualization {
         title: string;
         description: string;
         data_query?: string;
+        data?: any[];
         styling?: {
             color_scheme?: string;
             theme?: string;
@@ -162,6 +163,7 @@ function VisualizationCard({ visualization }: { visualization: Visualization }) 
                 chartType={component.chart_type || 'line'}
                 title={component.title}
                 description={component.description}
+                data={component.data}
             />
         );
     };
