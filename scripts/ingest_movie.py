@@ -167,7 +167,7 @@ def ingest_movie(movie_title: str, imdb_id: str):
     
     print("=" * 70)
     print(f"\n🌐 Access movie at:")
-    print(f"   Frontend: http://localhost:3000/movie/{imdb_id}")
+    print(f"   Frontend: http://localhost:4000/movie/{imdb_id}")
     print(f"   API: http://localhost:7000/api/movies/{imdb_id}")
     print()
 

@@ -2,9 +2,9 @@
 echo "🚀 Starting CineMatrix..."
 
 # Kill existing processes
-echo "Killing existing processes on ports 7000 (Backend), 3000 (Frontend), and 5173 (Vite)..."
+echo "Killing existing processes on ports 7000 (Backend), 4000 (Frontend), and 5173 (Vite)..."
 lsof -ti:7000 | xargs kill -9 2>/dev/null
-lsof -ti:3000 | xargs kill -9 2>/dev/null
+lsof -ti:4000 | xargs kill -9 2>/dev/null
 lsof -ti:5173 | xargs kill -9 2>/dev/null
 
 # Start Backend in background
@@ -15,9 +15,9 @@ BACKEND_PID=$!
 echo "Backend running (PID: $BACKEND_PID)"
 
 # Start Frontend
-echo "Starting Frontend (Port 5173)..."
+echo "Starting Frontend (Port 4000)..."
 cd frontend
-npm run dev
+npm run dev -- -p 4000
 
 # Cleanup on exit
 kill $BACKEND_PID

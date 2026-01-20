@@ -70,7 +70,7 @@ graph TD
     ```
 
 4.  **Running the App**:
-    Use the convenience script to start both Backend (Port 7000) and Frontend (Port 5173):
+    Use the convenience script to start both Backend (Port 7000) and Frontend (Port 4000):
     ```bash
     chmod +x start_app.sh
     ./start_app.sh
