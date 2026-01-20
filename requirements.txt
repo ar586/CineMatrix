@@ -43,7 +43,6 @@ pyparsing==3.3.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 pytrends==4.9.2
-google-search-results
 pytz==2025.2
 requests==2.32.5
 rsa==4.9.1
@@ -61,17 +60,10 @@ websocket-client==1.9.0
 websockets==15.0.1
 Wikipedia-API==0.8.1
 yarl==1.22.0
-transformers
-torch
-scipy
 google-generativeai
 fastapi
 uvicorn
 youtube-transcript-api
-langgraph
-langchain-google-genai
-langchain-core
-langchain
 bcrypt==3.2.2
 passlib[bcrypt]
 python-jose[cryptography]

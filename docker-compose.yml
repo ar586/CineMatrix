@@ -1,27 +1,16 @@
 version: '3.8'
 
 services:
-  # Database
-  mongo:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - cinematrix-net
-
+services:
   # Backend API
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "8000:8000"
+      - "7000:7000"
     environment:
-      - MONGO_URI=mongodb://mongo:27017/cinematrix
-      - MONGO_USER=${MONGO_USER}
-      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_URI=${MONGO_URI}
       # API Keys
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - TMDB_API_KEY=${TMDB_API_KEY}
@@ -39,8 +28,6 @@ services:
       - REDDIT_PASSWORD=${REDDIT_PASSWORD}
       # Auth
       - SECRET_KEY=${SECRET_KEY}
-    depends_on:
-      - mongo
     networks:
       - cinematrix-net
 
@@ -53,7 +40,7 @@ services:
       - "3000:3000"
     environment:
       # URL to backend container (for SSR/Rewrites)
-      - BACKEND_URL=http://backend:8000
+      - BACKEND_URL=http://backend:7000
     depends_on:
       - backend
     networks:
@@ -62,6 +49,3 @@ services:
 networks:
   cinematrix-net:
     driver: bridge
-
-volumes:
-  mongo_data:

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const isServer = typeof window === 'undefined';
 const API_BASE = isServer
-    ? (process.env.INTERNAL_API_URL || 'http://localhost:8000/api')
+    ? (process.env.INTERNAL_API_URL || 'http://localhost:7000/api')
     : '/api';
 
 export interface Movie {
