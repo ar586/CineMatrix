@@ -1,0 +1,25 @@
+* Host localhost:7000 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:7000...
+* connect to ::1 port 7000 from ::1 port 56457 failed: Connection refused
+*   Trying 127.0.0.1:7000...
+* Connected to localhost (127.0.0.1) port 7000
+> GET /api/movies/tt15464188/visualizations?page=1&limit=5 HTTP/1.1
+> Host: localhost:7000
+> User-Agent: curl/8.7.1
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< date: Tue, 20 Jan 2026 12:37:29 GMT
+< server: uvicorn
+< content-length: 2075
+< content-type: application/json
+< 
+{ [2075 bytes data]
+100  2075  100  2075    0     0  15942      0 --:--:-- --:--:-- --:--:-- 16085
+* Connection #0 to host localhost left intact
+{"page":1,"total_pages":3,"has_more":true,"visualizations":[{"id":"sentiment_overview","type":"text_card","priority":1,"component":{"card_type":"news","title":"Overall Sentiment: Neutral, But Brewing...","content":"Currently, 'Ikkis' holds an average sentiment score of 0.00. However, total discussions are low, suggesting potential for significant shifts as the release approaches. Early indicators point to a polarized reception.","source":"Dashboard Analysis","styling":{"theme":"info"}}},{"id":"discussion_volume","type":"chart","priority":2,"component":{"chart_type":"line","title":"Discussion Volume Over Time","description":"Tracks the number of discussions about 'Ikkis' over the past week. Spikes indicate key events or news releases.","data_query":"Total Discussions - Time Series","styling":{"color_scheme":"vibrant"}}},{"id":"platform_breakdown","type":"chart","priority":3,"component":{"chart_type":"pie","title":"Where is the Buzz?","description":"Shows the distribution of discussions across different platforms (Reddit, YouTube, Twitter, News Sites).","data_query":"Total Discussions - Platform Breakdown","styling":{"color_scheme":"vibrant"}}},{"id":"reddit_vs_youtube","type":"custom","priority":4,"component":{"custom_type":"comparison","title":"Reddit vs. YouTube: A Sentiment Divide","description":"Visual comparison of sentiment scores on Reddit and YouTube. Highlights the polarized reception.","layout_hint":"Two side-by-side gauges, one for Reddit, one for YouTube, showing sentiment scores.","data_query":"Sentiment Score - Reddit, Sentiment Score - YouTube"}},{"id":"news_headline_1","type":"text_card","priority":5,"component":{"card_type":"news","title":"Sriram Raghavan on 'Ikkis' - A War Film Unlike Others","content":"Director Sriram Raghavan discusses his approach to the war genre, emphasizing a realistic and character-driven narrative in 'Ikkis'. He aims to move away from typical patriotic tropes.","source":"Recent News - Sriram Raghavan Interview","styling":{"theme":"info"}}}],"generated_at":"2026-01-19T08:14:40.191000","cached":true}

@@ -5,6 +5,7 @@ import sys
 import os
 import logging
 from datetime import datetime
+from bson import ObjectId
 
 # Add project root to sys.path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
@@ -140,8 +141,6 @@ def update_movie_status(movie_id: str, is_active: bool = Body(..., embed=True)):
     
     db.movies.update_one(query, {"$set": {"is_active": is_active}})
     return {"status": "updated", "is_active": is_active}
-
-from bson import ObjectId
 
 @app.get("/api/movies/{movie_id}", response_model=Movie)
 def get_movie(movie_id: str):

@@ -55,6 +55,7 @@ export function InfiniteVisualizationFeed({ movieId }: Props) {
             setPage(pageNum + 1);
         } catch (error) {
             console.error('Failed to fetch visualizations:', error);
+            setHasMore(false); // Stop trying to fetch more on error
         } finally {
             setLoading(false);
         }
