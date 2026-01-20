@@ -41,6 +41,7 @@ services:
     environment:
       # URL to backend container (for SSR/Rewrites)
       - BACKEND_URL=http://backend:7000
+      - INTERNAL_API_URL=http://backend:7000/api
     depends_on:
       - backend
     networks:
