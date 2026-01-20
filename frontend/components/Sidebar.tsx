@@ -94,7 +94,7 @@ export default function Sidebar() {
                 </div>
 
                 {/* Navigation */}
-                <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
                     <Link
                         href="/"
                         onClick={() => setIsOpen(false)}

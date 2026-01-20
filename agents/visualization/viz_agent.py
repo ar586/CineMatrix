@@ -207,23 +207,42 @@ class VisualizationAgent:
             resolver = VisualizationDataResolver(db)
             
             # Resolve actual data for each visualization
+            visualizations_with_data = []
             for viz in cached_list:
                 spec = viz.get("spec", {})
                 chart_type = spec.get("chart_type")
                 data_query = spec.get("data_query", "")
+                viz_type = viz.get("type")
                 
                 # Only resolve data for chart types (not text cards)
-                if chart_type and viz.get("type") == "chart":
+                if chart_type and viz_type == "chart":
                     try:
                         resolved_data = resolver.resolve_data(movie_id, chart_type, data_query)
                         spec["data"] = resolved_data
-                        logger.info(f"Resolved {len(resolved_data)} data points for {chart_type} chart")
+                        
+                        # Only include if we have meaningful data
+                        if resolved_data and len(resolved_data) > 0:
+                            visualizations_with_data.append(viz)
+                            logger.info(f"✅ Resolved {len(resolved_data)} data points for {chart_type} chart")
+                        else:
+                            logger.info(f"⏭️  Skipping {chart_type} chart - no data available")
                     except Exception as e:
                         logger.error(f"Failed to resolve data for {chart_type}: {e}")
-                        spec["data"] = []  # Empty array instead of undefined
+                        # Skip this visualization entirely
+                else:
+                    # Include text cards and other non-chart types
+                    visualizations_with_data.append(viz)
             
-            # Get total count for pagination
-            total_count = db.visualization_components.count_documents({"movie_id": movie_id})
+            # Update cached_list to only include visualizations with data
+            cached_list = visualizations_with_data
+            
+            # If no visualizations have data, return empty response
+            if not cached_list:
+                logger.info(f"No visualizations with data for {movie_id}")
+                return self._no_data_response(page, movie_id)
+            
+            # Get total count for pagination (only count visualizations with data)
+            total_count = len(visualizations_with_data)
             total_pages = (total_count + limit - 1) // limit
             
             return {

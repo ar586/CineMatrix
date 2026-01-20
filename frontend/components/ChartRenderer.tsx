@@ -49,7 +49,12 @@ export function ChartRenderer({ chartType, title, description, data: providedDat
         }
     };
 
-    const data = (providedData && providedData.length > 0) ? providedData : getSampleData();
+    const data = (providedData && providedData.length > 0) ? providedData : null;
+
+    // Don't render if no data - prevents showing identical fallback data
+    if (!data) {
+        return null;
+    }
 
     const renderChart = () => {
         switch (chartType) {

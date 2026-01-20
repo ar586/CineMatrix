@@ -23,7 +23,20 @@ interface DiscussionSectionProps {
 }
 
 const timeAgo = (date: string) => {
-    const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+    // Handle both ISO strings and MongoDB date objects
+    let dateStr = typeof date === 'string' ? date : date.toString();
+
+    // If the timestamp doesn't have timezone info (no 'Z' or '+'/'-'), treat it as UTC
+    if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('-', 10)) {
+        dateStr = dateStr + 'Z';
+    }
+
+    const dateObj = new Date(dateStr);
+    const seconds = Math.floor((Date.now() - dateObj.getTime()) / 1000);
+
+    // Handle invalid dates
+    if (isNaN(seconds)) return "recently";
+
     let interval = seconds / 31536000;
     if (interval > 1) return Math.floor(interval) + " years ago";
     interval = seconds / 2592000;
@@ -115,7 +128,17 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
 
             if (res.ok) {
                 const updatedComment = await res.json();
+                // Update top-level comments
                 setComments(comments.map(c => c._id === commentId ? updatedComment : c));
+
+                // Update replies if this is a reply
+                const newExpandedReplies = { ...expandedReplies };
+                Object.keys(newExpandedReplies).forEach(parentId => {
+                    newExpandedReplies[parentId] = newExpandedReplies[parentId].map(
+                        (r: Comment) => r._id === commentId ? updatedComment : r
+                    );
+                });
+                setExpandedReplies(newExpandedReplies);
             }
         } catch (err) {
             console.error("Failed to like comment", err);
@@ -135,7 +158,17 @@ export default function DiscussionSection({ movieId }: DiscussionSectionProps) {
 
             if (res.ok) {
                 const updatedComment = await res.json();
+                // Update top-level comments
                 setComments(comments.map(c => c._id === commentId ? updatedComment : c));
+
+                // Update replies if this is a reply
+                const newExpandedReplies = { ...expandedReplies };
+                Object.keys(newExpandedReplies).forEach(parentId => {
+                    newExpandedReplies[parentId] = newExpandedReplies[parentId].map(
+                        (r: Comment) => r._id === commentId ? updatedComment : r
+                    );
+                });
+                setExpandedReplies(newExpandedReplies);
             }
         } catch (err) {
             console.error("Failed to dislike comment", err);
