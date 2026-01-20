@@ -64,6 +64,26 @@ def health_check():
     db = mongo.get_db()
     return {"status": "ok", "db": "connected" if db is not None else "disconnected"}
 
+# Helper to resolve slug/ObjectId to canonical movie_id (tt-id)
+def resolve_movie_id(db, identifier: str) -> str:
+    # 1. Exact match on movie_id (fastest)
+    if identifier.startswith("tt") or identifier.startswith("cm_"):
+        return identifier
+        
+    # 2. Lookup by slug
+    movie = db.movies.find_one({"slug": identifier}, {"movie_id": 1})
+    if movie and "movie_id" in movie:
+        return movie["movie_id"]
+        
+    # 3. Lookup by ObjectId
+    if ObjectId.is_valid(identifier):
+        movie = db.movies.find_one({"_id": ObjectId(identifier)}, {"movie_id": 1})
+        if movie and "movie_id" in movie:
+            return movie["movie_id"]
+            
+    # 4. Fallback: treat identifier as the ID itself (legacy behavior)
+    return identifier
+
 @app.get("/api/movies", response_model=List[Movie])
 def get_movies():
     mongo = get_mongo_client()
@@ -164,8 +184,10 @@ def get_daily_sentiment(movie_id: str):
     db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
+    target_id = resolve_movie_id(db, movie_id)
+    
     # Fetch last 30 days
-    cursor = db.daily_movie_sentiments.find({"movie_id": movie_id}).sort("date", 1).limit(30)
+    cursor = db.daily_movie_sentiments.find({"movie_id": target_id}).sort("date", 1).limit(30)
     return list(cursor)
 
 @app.get("/api/movies/{movie_id}/insights", response_model=List[Insight])
@@ -174,7 +196,9 @@ def get_insights(movie_id: str):
     db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
-    cursor = db.insights.find({"movie_id": movie_id}).sort("generated_at", -1).limit(20)
+    target_id = resolve_movie_id(db, movie_id)
+    
+    cursor = db.insights.find({"movie_id": target_id}).sort("generated_at", -1).limit(20)
     return list(cursor)
 
 @app.get("/api/movies/{movie_id}/feed")
@@ -183,8 +207,10 @@ def get_feed(movie_id: str, limit: int = 50):
     db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
+    target_id = resolve_movie_id(db, movie_id)
+    
     # Fetch latest raw sentiments
-    cursor = db.source_sentiments.find({"movie_id": movie_id}).sort("processed_at", -1).limit(limit)
+    cursor = db.source_sentiments.find({"movie_id": target_id}).sort("processed_at", -1).limit(limit)
     raw_items = list(cursor)
     
     # Transform to FeedItem format
@@ -228,8 +254,10 @@ def get_news(movie_id: str, limit: int = 10):
     db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
+    target_id = resolve_movie_id(db, movie_id)
+    
     # Fetch news articles sorted by relevance and date
-    cursor = db.news_articles.find({"movie_id": movie_id}).sort([
+    cursor = db.news_articles.find({"movie_id": target_id}).sort([
         ("relevance_score", -1),
         ("fetched_at", -1)
     ]).limit(limit)
@@ -257,8 +285,10 @@ def get_reddit_posts(movie_id: str, limit: int = 10):
     db = mongo.get_db()
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
+    target_id = resolve_movie_id(db, movie_id)
+    
     # Fetch Reddit posts sorted by score (most popular first)
-    cursor = db.reddit_posts.find({"movie_id": movie_id}).sort("score", -1).limit(limit)
+    cursor = db.reddit_posts.find({"movie_id": target_id}).sort("score", -1).limit(limit)
     posts = list(cursor)
     
     # Transform for frontend - include top 5 comments per post
@@ -273,7 +303,7 @@ def get_reddit_posts(movie_id: str, limit: int = 10):
         
         # Fetch sentiment
         sentiment = db.source_sentiments.find_one({
-            "movie_id": movie_id,
+            "movie_id": target_id,
             "source": "reddit",
             "source_ref.post_id": post.get("post_id")
         })
@@ -309,8 +339,11 @@ def get_visualizations(movie_id: str, page: int = 1, limit: int = 5):
         mongo = get_mongo_client()
         db = mongo.get_db()
         logger.info(f"DEBUG: Global db object in server: {db}")
+        
+        target_id = resolve_movie_id(db, movie_id)
+        
         agent = VisualizationAgent(db=db)
-        result = agent.generate_visualizations(movie_id, page, limit)
+        result = agent.generate_visualizations(target_id, page, limit)
         return result
     except Exception as e:
         logger.error(f"Visualization generation failed: {e}")
@@ -327,13 +360,9 @@ def get_youtube_videos(movie_id: str):
     if db is None: raise HTTPException(500, "DB Connection Failed")
     
     # Resolve movie title
-    try:
-        if ObjectId.is_valid(movie_id):
-            movie = db.movies.find_one({"_id": ObjectId(movie_id)})
-        else:
-             movie = db.movies.find_one({"movie_id": movie_id})
-    except:
-        movie = db.movies.find_one({"movie_id": movie_id})
+    target_id = resolve_movie_id(db, movie_id)
+    
+    movie = db.movies.find_one({"movie_id": target_id})
         
     if not movie:
         raise HTTPException(404, "Movie not found")
