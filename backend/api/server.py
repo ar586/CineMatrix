@@ -197,7 +197,7 @@ def get_insights(movie_id: str):
     
     target_id = resolve_movie_id(db, movie_id)
     
-    cursor = db.insights.find({"movie_id": target_id}).sort("generated_at", -1).limit(20)
+    cursor = db.insights.find({"movie_id": target_id}).sort("created_at", -1).limit(20)
     return list(cursor)
 
 @app.get("/api/movies/{movie_id}/feed")

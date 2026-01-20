@@ -12,7 +12,7 @@ export const AspectRadar: React.FC<Props> = ({ aspects }) => {
 
     const data = Object.keys(aspects).map(key => ({
         subject: key.charAt(0).toUpperCase() + key.slice(1),
-        A: aspects[key],
+        A: aspects[key] ?? 0,
         fullMark: 1,
     }));
 
