@@ -80,7 +80,8 @@ export default function Sidebar() {
                     display: 'flex',
                     flexDirection: 'column',
                     padding: '1.5rem',
-                    overflowY: 'auto'
+                    overflowY: 'auto',
+                    boxSizing: 'border-box'
                 }}
             >
                 {/* Header */}
