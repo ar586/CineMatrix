@@ -46,9 +46,12 @@ from backend.api.discussion import router as discussion_router
 app.include_router(discussion_router)
 
 # CORS (Allow Frontend)
+_frontend_url = os.getenv("FRONTEND_URL")
+_allowed_origins = [_frontend_url] if _frontend_url else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For dev only
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

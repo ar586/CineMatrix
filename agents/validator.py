@@ -63,4 +63,4 @@ class ContentValidator:
                 
         except Exception as e:
             logger.error(f"Validation Error: {e}")
-            return True # Fail open on error
+            return True 

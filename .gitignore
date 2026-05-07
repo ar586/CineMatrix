@@ -3,6 +3,10 @@ venv/
 __pycache__/
 *.pyc
 
+# Frontend
+frontend/.next/
+frontend/node_modules/
+
 # Logs
 *.log
 

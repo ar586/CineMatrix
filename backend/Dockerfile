@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend ./backend
 COPY agents ./agents
 COPY scripts ./scripts
+COPY ml ./ml
 
 # Set python path
 ENV PYTHONPATH=/app
